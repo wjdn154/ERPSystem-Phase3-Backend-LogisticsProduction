@@ -1,0 +1,7 @@
+package com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.basic_information_management.warehouse_hierarchy_group;
+
+import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.warehouse_management.hierarchy_group.WarehouseHierarchyGroup;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface WarehouseHierarchyGroupRepository extends JpaRepository<WarehouseHierarchyGroup, Long> {
+}

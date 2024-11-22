@@ -1,0 +1,4 @@
+package com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.warehouse_location_management;
+
+public interface WarehouseLocationRepositoryCustom {
+}

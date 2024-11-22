@@ -1,1 +1,1 @@
-rootProject.name = "ERPSystem-phase3-Monolithic"
+rootProject.name = "ERPSystem-phase3-LogisticsProduction"
