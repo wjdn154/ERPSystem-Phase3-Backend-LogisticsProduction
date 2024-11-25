@@ -10,6 +10,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.d
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.model.basic_information_management.voucher_entry.sales_and_purchase_voucher_entry.enums.ElectronicTaxInvoiceStatus;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.client.ClientRepository;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.VatTypeService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.VatAmountWithSupplyAmountDTO;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.VatTypeShowDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.Employee;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.repository.basic_information_management.Employee.EmployeeRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.Product;
@@ -28,6 +31,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -51,7 +55,7 @@ public class SaleServiceImpl implements SaleService {
     private final ProductRepository productRepository;
     private final RecentActivityRepository recentActivityRepository;
     private final NotificationService notificationService;
-
+    private final VatTypeService vatTypeService;
 
 
     @Override
@@ -78,14 +82,15 @@ public class SaleServiceImpl implements SaleService {
     // Entity -> 판매서 목록 조회용 DTO 변환 메소드
     private SaleResponseDto toListDto(Sale sale) {
 
+        VatTypeShowDTO vatTypeShowDTO = vatTypeService.getVatType(sale.getVatId());
+
         return SaleResponseDto.builder()
                 .id(sale.getId())
                 .clientName(sale.getClient().getPrintClientName())
                 .date(sale.getDate())
                 .productName(getProductNameWithCount(sale))
                 .warehouseName(sale.getShippingWarehouse().getName())
-//                .vatName(vatTypeService.vatTypeGet(sale.getVatId()).getVatTypeName())
-                .vatName("임시")
+                .vatName(vatTypeShowDTO.getVatTypeName())
                 .totalPrice(getTotalPrice(sale))
                 .totalQuantity(getTotalQuantity(sale))
                 .status(sale.getState().toString())
@@ -137,6 +142,8 @@ public class SaleServiceImpl implements SaleService {
     /** 판매서 상세 정보 조회 관련 메서드 **/
     // Entity -> 상세 조회용 DTO 변환 메소드
     private SaleResponseDetailDto toDetailDto(Sale sale) {
+        VatTypeShowDTO vatTypeShowDTO = vatTypeService.getVatType(sale.getVatId());
+
         return SaleResponseDetailDto.builder()
                 .id(sale.getId())
                 .date(sale.getDate())
@@ -151,10 +158,8 @@ public class SaleServiceImpl implements SaleService {
                 .warehouseName(sale.getShippingWarehouse().getName())
                 .exchangeRate(sale.getCurrency().getExchangeRate())
                 .vatId(sale.getVatId())
-//                .vatCode(vatTypeService.vatTypeGet(sale.getVatId()).getVatTypeCode())
-                .vatCode("1")
-//                .vatName(vatTypeService.vatTypeGet(sale.getVatId()).getVatTypeName())
-                .vatName("임시")
+                .vatCode(vatTypeShowDTO.getVatTypeCode())
+                .vatName(vatTypeShowDTO.getVatTypeName())
                 .journalEntryCode(sale.getJournalEntryCode())
                 .electronicTaxInvoiceStatus(sale.getElectronicTaxInvoiceStatus().toString())
                 .currencyId(sale.getCurrency().getId())
@@ -253,30 +258,28 @@ public class SaleServiceImpl implements SaleService {
 
             BigDecimal supplyPrice = BigDecimal.valueOf(item.getQuantity()).multiply(product.getSalesPrice());
 
-//            VatAmountWithSupplyAmountDTO vatAmountWithSupplyAmountDTO = new VatAmountWithSupplyAmountDTO();
-//            vatAmountWithSupplyAmountDTO.setSupplyAmount(supplyPrice);
-//            vatAmountWithSupplyAmountDTO.setVatTypeId(sale.getVatId());
+            VatAmountWithSupplyAmountDTO vatAmountWithSupplyAmountDTO = new VatAmountWithSupplyAmountDTO();
+            vatAmountWithSupplyAmountDTO.setSupplyAmount(supplyPrice);
+            vatAmountWithSupplyAmountDTO.setVatTypeId(sale.getVatId());
 
 
             BigDecimal localAmount = null;
             BigDecimal vat = null;
 
-//            if (sale.getCurrency().getId() == 6) {
-//                vat = vatTypeService.vatAmountCalculate(vatAmountWithSupplyAmountDTO);
-//            } else if (sale.getCurrency().getExchangeRate() != null) {
-//                localAmount = supplyPrice.multiply(sale.getCurrency().getExchangeRate());
-//            } else {
-//                throw new RuntimeException("환율 정보가 없습니다.");
-//            }
+            if (sale.getCurrency().getId() == 6) {
+                vat = vatTypeService.vatAmountCalculate(vatAmountWithSupplyAmountDTO);
+            } else if (sale.getCurrency().getExchangeRate() != null) {
+                localAmount = supplyPrice.multiply(sale.getCurrency().getExchangeRate());
+            } else {
+                throw new RuntimeException("환율 정보가 없습니다.");
+            }
 
             SaleDetail detail = SaleDetail.builder()
                     .product(product)
                     .quantity(item.getQuantity())
                     .supplyPrice(supplyPrice)
-//                    .localAmount(localAmount)
-                    .localAmount(BigDecimal.ZERO)
-//                    .vat(vat)
-                    .vat(BigDecimal.ZERO)
+                    .localAmount(localAmount)
+                    .vat(vat)
                     .remarks(item.getRemarks())
                     .build();
             sale.addSaleDetail(detail);

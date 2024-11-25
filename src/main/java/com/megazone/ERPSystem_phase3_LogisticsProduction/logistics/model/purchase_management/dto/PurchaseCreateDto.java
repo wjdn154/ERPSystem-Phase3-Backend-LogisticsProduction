@@ -22,7 +22,7 @@ public class PurchaseCreateDto {
     private Long managerId;
     private Long warehouseId;
     private Long currencyId;
-    private String vatId;
+    private Long vatId;
     private String journalEntryCode;
     private String electronicTaxInvoiceStatus;
     private String remarks;

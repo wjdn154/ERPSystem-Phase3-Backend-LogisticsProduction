@@ -9,6 +9,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.d
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.model.basic_information_management.voucher_entry.sales_and_purchase_voucher_entry.enums.ElectronicTaxInvoiceStatus;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.client.ClientRepository;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.VatTypeService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.VatAmountWithSupplyAmountDTO;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.VatTypeShowDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.Employee;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.repository.basic_information_management.Employee.EmployeeRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.Product;
@@ -47,6 +50,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     private final ProductRepository productRepository;
     private final RecentActivityRepository recentActivityRepository;
     private final NotificationService notificationService;
+    private final VatTypeService vatTypeService;
 
     /**
      * 구매서 목록 조회
@@ -85,8 +89,7 @@ public class PurchaseServiceImpl implements PurchaseService {
                 .date(purchase.getDate())
                 .productName(getProductNameWithCount(purchase))
                 .warehouseName(purchase.getReceivingWarehouse().getName())
-//                .vatName(vatTypeService.vatTypeGet(vatId).getVatTypeName())
-                .vatName("임시")
+                .vatName(vatTypeService.getVatType(purchase.getVatId()).getVatTypeName())
                 .totalPrice(getTotalPrice(purchase))
                 .totalQuantity(getTotalQuantity(purchase))
                 .status(purchase.getStatus().toString())
@@ -140,6 +143,8 @@ public class PurchaseServiceImpl implements PurchaseService {
 
 //        Long vatId = vatTypeService.vatTypeGetId(purchase.getVatId());
 
+        VatTypeShowDTO vatTypeShowDTO = vatTypeService.getVatType(purchase.getVatId());
+
         return PurchaseResponseDetailDto.builder()
                 .id(purchase.getId())
                 .date(purchase.getDate())
@@ -153,10 +158,8 @@ public class PurchaseServiceImpl implements PurchaseService {
                 .warehouseCode(purchase.getReceivingWarehouse().getCode())
                 .warehouseName(purchase.getReceivingWarehouse().getName())
                 .exchangeRate(purchase.getCurrency().getExchangeRate())
-//                .vatCode(vatTypeService.vatTypeGet(vatId).getVatTypeCode())
-                .vatCode("1")
-//                .vatName(vatTypeService.vatTypeGet(vatId).getVatTypeName())
-                .vatName("임시")
+                .vatCode(vatTypeShowDTO.getVatTypeCode())
+                .vatName(vatTypeShowDTO.getVatTypeName())
                 .journalEntryCode(purchase.getJournalEntryCode())
                 .electronicTaxInvoiceStatus(purchase.getElectronicTaxInvoiceStatus().toString())
                 .currencyId(purchase.getCurrency().getId())
@@ -252,31 +255,27 @@ public class PurchaseServiceImpl implements PurchaseService {
             BigDecimal supplyPrice = BigDecimal.valueOf(item.getQuantity()).multiply(product.getPurchasePrice());
 
 
-//            VatAmountWithSupplyAmountDTO vatAmountWithSupplyAmountDTO = new VatAmountWithSupplyAmountDTO();
-//            Long vatId = vatTypeService.vatTypeGetId(purchase.getVatId());
-
-//            vatAmountWithSupplyAmountDTO.setSupplyAmount(supplyPrice);
-//            vatAmountWithSupplyAmountDTO.setVatTypeId(vatId);
+            VatAmountWithSupplyAmountDTO vatAmountWithSupplyAmountDTO = new VatAmountWithSupplyAmountDTO();
+            vatAmountWithSupplyAmountDTO.setSupplyAmount(supplyPrice);
+            vatAmountWithSupplyAmountDTO.setVatTypeId(purchase.getVatId());
 
             BigDecimal localAmount = null;
             BigDecimal vat = null;  // 외화의 경우 부가세 계산 안 함
 
-//            if (purchase.getCurrency().getId() == 6) {
-//                vat = vatTypeService.vatAmountCalculate(vatAmountWithSupplyAmountDTO);
-//            } else if (purchase.getCurrency().getExchangeRate() != null) {
-//                localAmount = supplyPrice.multiply(purchase.getCurrency().getExchangeRate());
-//            } else {
-//                throw new RuntimeException("환율 정보가 없습니다.");
-//            }
+            if (purchase.getCurrency().getId() == 6) {
+                vat = vatTypeService.vatAmountCalculate(vatAmountWithSupplyAmountDTO);
+            } else if (purchase.getCurrency().getExchangeRate() != null) {
+                localAmount = supplyPrice.multiply(purchase.getCurrency().getExchangeRate());
+            } else {
+                throw new RuntimeException("환율 정보가 없습니다.");
+            }
 
             PurchaseDetail detail = PurchaseDetail.builder()
                     .product(product)
                     .quantity(item.getQuantity())
                     .supplyPrice(supplyPrice)
-//                    .localAmount(localAmount)
-                    .localAmount(BigDecimal.ZERO)
-//                    .vat(vat)
-                    .vat(BigDecimal.ZERO)
+                    .localAmount(localAmount)
+                    .vat(vat)
                     .remarks(item.getRemarks())
                     .build();
 

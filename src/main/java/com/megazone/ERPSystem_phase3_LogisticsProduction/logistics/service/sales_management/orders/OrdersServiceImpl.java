@@ -10,6 +10,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.d
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.model.basic_information_management.voucher_entry.sales_and_purchase_voucher_entry.enums.ElectronicTaxInvoiceStatus;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.client.ClientRepository;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.VatTypeService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.VatAmountWithSupplyAmountDTO;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.VatTypeShowDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.Employee;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.repository.basic_information_management.Employee.EmployeeRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.Product;
@@ -51,6 +54,7 @@ public class OrdersServiceImpl implements OrdersService {
     private final ProductRepository productRepository;
     private final RecentActivityRepository recentActivityRepository;
     private final NotificationService notificationService;
+    private final VatTypeService vatTypeService;
 
 
 
@@ -86,8 +90,7 @@ public class OrdersServiceImpl implements OrdersService {
                 .deliveryDate(orders.getDeliveryDate())
                 .productName(getProductNameWithCount(orders))
                 .warehouseName(orders.getShippingWarehouse().getName())
-//                .vatName(vatTypeService.vatTypeGet(orders.getVatId()).getVatTypeName())
-                .vatName("임시")
+                .vatName(vatTypeService.getVatType(orders.getVatId()).getVatTypeName())
                 .totalPrice(getTotalPrice(orders))
                 .totalQuantity(getTotalQuantity(orders))
                 .status(orders.getState().toString())
@@ -138,6 +141,7 @@ public class OrdersServiceImpl implements OrdersService {
     /** 주문서 상세 정보 조회 관련 메서드 **/
     // Entity -> 상세 조회용 DTO 변환 메소드
     private OrdersResponseDetailDto toDetailDto(Orders orders) {
+        VatTypeShowDTO vatTypeShowDTO = vatTypeService.getVatType(orders.getVatId());
         return OrdersResponseDetailDto.builder()
                 .id(orders.getId())
                 .date(orders.getDate())
@@ -153,10 +157,8 @@ public class OrdersServiceImpl implements OrdersService {
                 .warehouseName(orders.getShippingWarehouse().getName())
                 .exchangeRate(orders.getCurrency().getExchangeRate())
                 .vatId(orders.getVatId())
-//                .vatCode(vatTypeService.vatTypeGet(orders.getVatId()).getVatTypeCode())
-                .vatCode("1")
-//                .vatName(vatTypeService.vatTypeGet(orders.getVatId()).getVatTypeName())
-                .vatName("임시")
+                .vatCode(vatTypeShowDTO.getVatTypeCode())
+                .vatName(vatTypeShowDTO.getVatTypeName())
                 .journalEntryCode(orders.getJournalEntryCode())
                 .electronicTaxInvoiceStatus(orders.getElectronicTaxInvoiceStatus().toString())
                 .currencyId(orders.getCurrency().getId())
@@ -259,29 +261,27 @@ public class OrdersServiceImpl implements OrdersService {
 
             BigDecimal supplyPrice = BigDecimal.valueOf(item.getQuantity()).multiply(product.getSalesPrice());
 
-//            VatAmountWithSupplyAmountDTO vatAmountWithSupplyAmountDTO = new VatAmountWithSupplyAmountDTO();
-//            vatAmountWithSupplyAmountDTO.setSupplyAmount(supplyPrice);
-//            vatAmountWithSupplyAmountDTO.setVatTypeId(orders.getVatId());
+            VatAmountWithSupplyAmountDTO vatAmountWithSupplyAmountDTO = new VatAmountWithSupplyAmountDTO();
+            vatAmountWithSupplyAmountDTO.setSupplyAmount(supplyPrice);
+            vatAmountWithSupplyAmountDTO.setVatTypeId(orders.getVatId());
 
             BigDecimal localAmount = null;
             BigDecimal vat = null;
-
-//            if (orders.getCurrency().getId() == 6) {
-//                vat = vatTypeService.vatAmountCalculate(vatAmountWithSupplyAmountDTO);
-//            } else if (orders.getCurrency().getExchangeRate() != null) {
-//                localAmount = supplyPrice.multiply(orders.getCurrency().getExchangeRate());
-//            } else {
-//                throw new RuntimeException("환율 정보가 없습니다.");
-//            }
+//
+            if (orders.getCurrency().getId() == 6) {
+                vat = vatTypeService.vatAmountCalculate(vatAmountWithSupplyAmountDTO);
+            } else if (orders.getCurrency().getExchangeRate() != null) {
+                localAmount = supplyPrice.multiply(orders.getCurrency().getExchangeRate());
+            } else {
+                throw new RuntimeException("환율 정보가 없습니다.");
+            }
 
             OrdersDetail detail = OrdersDetail.builder()
                     .product(product)
                     .quantity(item.getQuantity())
                     .supplyPrice(supplyPrice)
-//                    .localAmount(localAmount)
-                    .localAmount(BigDecimal.ZERO)
-//                    .vat(vat)
-                    .vat(BigDecimal.ZERO)
+                    .localAmount(localAmount)
+                    .vat(vat)
                     .remarks(item.getRemarks())
                     .build();
             orders.addOrdersDetail(detail);

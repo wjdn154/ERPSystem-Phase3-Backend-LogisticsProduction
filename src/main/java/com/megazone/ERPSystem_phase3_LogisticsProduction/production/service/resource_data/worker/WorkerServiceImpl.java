@@ -77,6 +77,8 @@ public class WorkerServiceImpl implements WorkerService {
 
         //해당 회사아이디에 해당하는 부서 작업자 목록 조회
         List<ListWorkerDTO> workerList = workerRepository.findAllWorkerByDepartment();
+
+
         return workerList;
     }
 
