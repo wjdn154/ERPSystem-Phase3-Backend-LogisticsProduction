@@ -21,7 +21,7 @@ public class Department {
 //    private List<Transfer> transferFrom;    // 해당 부서가 직원 이동의 출발 부서였던 모든 Transfer 기록을 가져옴.
 //
 //    @OneToMany(mappedBy = "toDepartment") // 도착 부서
-//    private List<Transfer> transfersTo; .
+//    private List<Transfer> transfersTo;
 
     @Column(name="department_code", nullable = false,unique = true)
     private String departmentCode; // 부서번호
