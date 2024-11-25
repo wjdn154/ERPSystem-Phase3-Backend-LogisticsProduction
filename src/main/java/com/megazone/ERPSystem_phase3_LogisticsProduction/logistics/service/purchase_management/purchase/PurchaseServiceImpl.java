@@ -21,6 +21,7 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchas
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.dto.PurchaseResponseDetailDto.PurchaseItemDetailDto;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.dto.PurchaseResponseDto;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.dto.SearchDTO;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.sales_management.Orders;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.warehouse_management.warehouse.Warehouse;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.basic_information_management.warehouse.WarehouseRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
@@ -69,17 +70,25 @@ public class PurchaseServiceImpl implements PurchaseService {
             purchases = purchaseRepository.findBySearch(dto);
         }
 
+        List<Long> vatTypeIdList = new ArrayList<>();
+        for (Purchase purchase : purchases) {
+            vatTypeIdList.add(purchase.getVatId());
+        }
+
+        Map<Long,VatTypeShowDTO> vatTypeMap = vatTypeService.getVatTypeList(vatTypeIdList).stream()
+                .collect(Collectors.toMap(VatTypeShowDTO::getVatTypeId, v -> v));
+
         // 발주서가 없는 경우 빈 리스트 반환
         return purchases.isEmpty()
                 ? Collections.emptyList()
                 : purchases.stream()
-                .map(this::toListDto)
+                .map((purchase) -> toListDto(purchase,vatTypeMap))
                 .toList();
     }
 
     /** 구매서 목록 조회 관련 메서드 **/
     // Entity -> 구매서 목록 조회용 DTO 변환 메소드
-    private PurchaseResponseDto toListDto(Purchase purchase) {
+    private PurchaseResponseDto toListDto(Purchase purchase,Map<Long,VatTypeShowDTO> vatTypeMap) {
 
 //        Long vatId = vatTypeService.vatTypeGetId(purchase.getVatId());
 
@@ -89,7 +98,7 @@ public class PurchaseServiceImpl implements PurchaseService {
                 .date(purchase.getDate())
                 .productName(getProductNameWithCount(purchase))
                 .warehouseName(purchase.getReceivingWarehouse().getName())
-                .vatName(vatTypeService.getVatType(purchase.getVatId()).getVatTypeName())
+                .vatName(vatTypeMap.get(purchase.getVatId()).getVatTypeName())
                 .totalPrice(getTotalPrice(purchase))
                 .totalQuantity(getTotalQuantity(purchase))
                 .status(purchase.getStatus().toString())

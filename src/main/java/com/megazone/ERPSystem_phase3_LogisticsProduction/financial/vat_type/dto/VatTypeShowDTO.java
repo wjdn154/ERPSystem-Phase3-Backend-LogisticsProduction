@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class VatTypeShowDTO {
+    private Long vatTypeId;
     private String vatTypeCode;
     private String vatTypeName;
     private String description;

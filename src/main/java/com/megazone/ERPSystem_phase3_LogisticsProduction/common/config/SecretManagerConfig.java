@@ -43,9 +43,9 @@ public class SecretManagerConfig {
 //                getCachedSecret("omz-env-secrets-backend", "RDS_WRITER_DB_URL"),
 //                getCachedSecret("omz-env-secrets-backend", "RDS_DB_USER"),
 //                getCachedSecret("omz-env-secrets-backend", "RDS_DB_PASSWORD")
-                    getSecretValueFromJson("omz-env-secrets-backend", "DB_URL"),
-                    getSecretValueFromJson("omz-env-secrets-backend", "DB_USER"),
-                    getSecretValueFromJson("omz-env-secrets-backend", "DB_PASSWORD")
+                    getSecretValueFromJson("omz-env-secrets-backend", "RDS_LOGISTICS_PRODUCTION_WRITER_DB_URL"),
+                    getSecretValueFromJson("omz-env-secrets-backend", "RDS_DB_USER"),
+                    getSecretValueFromJson("omz-env-secrets-backend", "RDS_DB_PASSWORD")
         );
     }
 
@@ -54,9 +54,9 @@ public class SecretManagerConfig {
 //                getCachedSecret("omz-env-secrets-backend", "RDS_READER_DB_URL"),
 //                getCachedSecret("omz-env-secrets-backend", "RDS_DB_USER"),
 //                getCachedSecret("omz-env-secrets-backend", "RDS_DB_PASSWORD")
-                    getSecretValueFromJson("omz-env-secrets-backend", "DB_URL"),
-                    getSecretValueFromJson("omz-env-secrets-backend", "DB_USER"),
-                    getSecretValueFromJson("omz-env-secrets-backend", "DB_PASSWORD")
+                    getSecretValueFromJson("omz-env-secrets-backend", "RDS_LOGISTICS_PRODUCTION_READER_DB_URL"),
+                    getSecretValueFromJson("omz-env-secrets-backend", "RDS_DB_USER"),
+                    getSecretValueFromJson("omz-env-secrets-backend", "RDS_DB_PASSWORD")
         );
     }
 

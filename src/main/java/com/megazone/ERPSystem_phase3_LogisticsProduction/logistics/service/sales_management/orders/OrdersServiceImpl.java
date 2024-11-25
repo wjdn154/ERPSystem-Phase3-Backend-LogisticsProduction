@@ -15,6 +15,7 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.VatTypeShowDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.Employee;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.repository.basic_information_management.Employee.EmployeeRepository;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.dto.EmployeeOneDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.Product;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.dto.SearchDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.sales_management.Orders;
@@ -34,10 +35,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -71,17 +69,25 @@ public class OrdersServiceImpl implements OrdersService {
             orders = ordersRepository.findBySearch(dto);
         }
 
+        List<Long> vatTypeIdList = new ArrayList<>();
+        for (Orders order : orders) {
+            vatTypeIdList.add(order.getVatId());
+        }
+
+        Map<Long,VatTypeShowDTO> vatTypeMap = vatTypeService.getVatTypeList(vatTypeIdList).stream()
+                .collect(Collectors.toMap(VatTypeShowDTO::getVatTypeId, v -> v));
+
         // 발주서가 없는 경우 빈 리스트 반환
         return orders.isEmpty()
                 ? Collections.emptyList()
                 : orders.stream()
-                .map(this::toListDto)
+                .map((order) -> toListDto(order,vatTypeMap))
                 .toList();
     }
 
     /** 주문서 목록 조회 관련 메서드 **/
     // Entity -> 주문서 목록 조회용 DTO 변환 메소드
-    private OrdersResponseDto toListDto(Orders orders) {
+    private OrdersResponseDto toListDto(Orders orders,Map<Long,VatTypeShowDTO> vatTypeMap) {
 
         return OrdersResponseDto.builder()
                 .id(orders.getId())
@@ -90,7 +96,7 @@ public class OrdersServiceImpl implements OrdersService {
                 .deliveryDate(orders.getDeliveryDate())
                 .productName(getProductNameWithCount(orders))
                 .warehouseName(orders.getShippingWarehouse().getName())
-                .vatName(vatTypeService.getVatType(orders.getVatId()).getVatTypeName())
+                .vatName(vatTypeMap.get(orders.getVatId()).getVatTypeName())
                 .totalPrice(getTotalPrice(orders))
                 .totalQuantity(getTotalQuantity(orders))
                 .status(orders.getState().toString())
@@ -142,6 +148,7 @@ public class OrdersServiceImpl implements OrdersService {
     // Entity -> 상세 조회용 DTO 변환 메소드
     private OrdersResponseDetailDto toDetailDto(Orders orders) {
         VatTypeShowDTO vatTypeShowDTO = vatTypeService.getVatType(orders.getVatId());
+
         return OrdersResponseDetailDto.builder()
                 .id(orders.getId())
                 .date(orders.getDate())

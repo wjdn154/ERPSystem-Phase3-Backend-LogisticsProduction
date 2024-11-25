@@ -19,7 +19,7 @@ import java.time.LocalDate;
 @Table(name = "employee")
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"department", "position", "jobTitle", "users", "bankAccount"})
+@ToString(exclude = {"department", "users"})
 public class Employee {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
