@@ -89,16 +89,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                         userDetails, jwt, userDetails.getAuthorities());  // 인증 객체 생성
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);  // 인증 객체를 SecurityContext에 설정
-                // 인증 설정 후 SecurityContext 상태 확인
-                System.out.println("인증 설정 후 - SecurityContext: " + SecurityContextHolder.getContext());
             }
         }
         try {
             chain.doFilter(request, response);  // 다음 필터 실행
         } finally {
-            // 요청 종료 시 SecurityContext 상태 확인
             SecurityContextHolder.clearContext();
-            System.out.println("요청 종료 - SecurityContext: " + SecurityContextHolder.getContext());
         }
     }
 }
