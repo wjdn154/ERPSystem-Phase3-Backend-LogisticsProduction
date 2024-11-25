@@ -50,6 +50,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
+        // 요청 시작 시 SecurityContext 상태 확인
+        System.out.println("요청 시작 - SecurityContext: " + SecurityContextHolder.getContext());
+
         // /auth 경로는 필터를 통과시킴
         String path = request.getRequestURI();
         if (path.startsWith("/api/hr/auth/login")) {
@@ -83,11 +86,15 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             // 토큰이 유효한지 확인하고, 유효하면 인증 처리
             if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());  // 인증 객체 생성
+                        userDetails, jwt, userDetails.getAuthorities());  // 인증 객체 생성
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);  // 인증 객체를 SecurityContext에 설정
             }
         }
-        chain.doFilter(request, response);  // 모든 경로에 대해 필터 체인 호출
+        try {
+            chain.doFilter(request, response);  // 다음 필터 실행
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 }

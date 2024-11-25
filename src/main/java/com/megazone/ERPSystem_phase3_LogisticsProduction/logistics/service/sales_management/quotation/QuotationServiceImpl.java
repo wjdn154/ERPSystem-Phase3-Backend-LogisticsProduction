@@ -10,6 +10,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.d
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.model.basic_information_management.voucher_entry.sales_and_purchase_voucher_entry.enums.ElectronicTaxInvoiceStatus;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.client.ClientRepository;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.VatTypeService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.VatAmountWithSupplyAmountDTO;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.VatTypeShowDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.Employee;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.repository.basic_information_management.Employee.EmployeeRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.Product;
@@ -51,6 +54,7 @@ public class QuotationServiceImpl implements QuotationService {
     private final ProductRepository productRepository;
     private final RecentActivityRepository recentActivityRepository;
     private final NotificationService notificationService;
+    private final VatTypeService vatTypeService;
 
 
 
@@ -84,8 +88,7 @@ public class QuotationServiceImpl implements QuotationService {
                 .date(quotation.getDate())
                 .productName(getProductNameWithCount(quotation))
                 .warehouseName(quotation.getShippingWarehouse().getName())
-//                .vatName(vatTypeService.vatTypeGet(quotation.getVatId()).getVatTypeName())
-                .vatName("임시")
+                .vatName(vatTypeService.getVatType(quotation.getVatId()).getVatTypeName())
                 .totalPrice(getTotalPrice(quotation))
                 .totalQuantity(getTotalQuantity(quotation))
                 .status(quotation.getState().toString())
@@ -136,6 +139,8 @@ public class QuotationServiceImpl implements QuotationService {
     /** 견적서 상세 정보 조회 관련 메서드 **/
     // Entity -> 상세 조회용 DTO 변환 메소드
     private QuotationResponseDetailDto toDetailDto(Quotation quotation) {
+        VatTypeShowDTO vatTypeShowDTO = vatTypeService.getVatType(quotation.getVatId());
+
         return QuotationResponseDetailDto.builder()
                 .id(quotation.getId())
                 .date(quotation.getDate())
@@ -150,10 +155,8 @@ public class QuotationServiceImpl implements QuotationService {
                 .warehouseName(quotation.getShippingWarehouse().getName())
                 .exchangeRate(quotation.getCurrency().getExchangeRate())
                 .vatId(quotation.getVatId())
-//                .vatCode(vatTypeService.vatTypeGet(quotation.getVatId()).getVatTypeCode())
-                .vatCode("1")
-//                .vatName(vatTypeService.vatTypeGet(quotation.getVatId()).getVatTypeName())
-                .vatName("임시")
+                .vatCode(vatTypeShowDTO.getVatTypeCode())
+                .vatName(vatTypeShowDTO.getVatTypeName())
                 .journalEntryCode(quotation.getJournalEntryCode())
                 .electronicTaxInvoiceStatus(quotation.getElectronicTaxInvoiceStatus().toString())
                 .currencyId(quotation.getCurrency().getId())
@@ -249,28 +252,27 @@ public class QuotationServiceImpl implements QuotationService {
 
             BigDecimal supplyPrice = BigDecimal.valueOf(item.getQuantity()).multiply(product.getSalesPrice());
 
-//            VatAmountWithSupplyAmountDTO vatAmountWithSupplyAmountDTO = new VatAmountWithSupplyAmountDTO();
-//            vatAmountWithSupplyAmountDTO.setSupplyAmount(supplyPrice);
-//            vatAmountWithSupplyAmountDTO.setVatTypeId(quotation.getVatId());
-//
-//            BigDecimal localAmount = null;
-//            BigDecimal vat = null;
-//
-//            if (quotation.getCurrency().getId() == 6) {
-//                vat = vatTypeService.vatAmountCalculate(vatAmountWithSupplyAmountDTO);
-//                System.out.println("vat: " + vat);
-//            } else if (quotation.getCurrency().getExchangeRate() != null) {
-//                localAmount = supplyPrice.multiply(quotation.getCurrency().getExchangeRate());
-//            } else {
-//                throw new RuntimeException("환율 정보가 없습니다.");
-//            }
+            VatAmountWithSupplyAmountDTO vatAmountWithSupplyAmountDTO = new VatAmountWithSupplyAmountDTO();
+            vatAmountWithSupplyAmountDTO.setSupplyAmount(supplyPrice);
+            vatAmountWithSupplyAmountDTO.setVatTypeId(quotation.getVatId());
+
+            BigDecimal localAmount = null;
+            BigDecimal vat = null;
+
+            if (quotation.getCurrency().getId() == 6) {
+                vat = vatTypeService.vatAmountCalculate(vatAmountWithSupplyAmountDTO);
+            } else if (quotation.getCurrency().getExchangeRate() != null) {
+                localAmount = supplyPrice.multiply(quotation.getCurrency().getExchangeRate());
+            } else {
+                throw new RuntimeException("환율 정보가 없습니다.");
+            }
 
             QuotationDetail detail = QuotationDetail.builder()
                     .product(product)
                     .quantity(item.getQuantity())
                     .supplyPrice(supplyPrice)
-                    .localAmount(item.getVat().multiply(quotation.getCurrency().getExchangeRate()))
-                    .vat(item.getVat())
+                    .localAmount(localAmount)
+                    .vat(vat)
                     .remarks(item.getRemarks())
                     .build();
             quotation.addQuotationDetail(detail);

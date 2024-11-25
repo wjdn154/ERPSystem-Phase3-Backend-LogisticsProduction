@@ -19,9 +19,7 @@ import java.time.LocalDate;
 @Table(name = "employee")
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"department", "position", "jobTitle", "users", "bankAccount"})
-//@SQLDelete(sql = "UPDATE employee SET is_deleted = true WHERE id = ?")
-//@Where(clause = "is_deleted = false")
+@ToString(exclude = {"department", "users"})
 public class Employee {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

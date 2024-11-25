@@ -5,7 +5,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.sales_m
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.sales_management.dto.orders.OrdersResponseDetailDto;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.sales_management.dto.orders.OrdersResponseDto;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.service.sales_management.orders.OrdersService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.apache.tomcat.util.http.parser.Authorization;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -25,13 +27,14 @@ public class OrdersController {
      * @return
      */
     @PostMapping("/")
-    public ResponseEntity<?> getOrders(@RequestBody(required = false) SearchDTO dto) {
+    public ResponseEntity<?> getOrders(@RequestBody(required = false) SearchDTO dto, HttpServletRequest request) {
+        String test = request.getHeader("Authorization");
+        System.out.println(test);
         List<OrdersResponseDto> response = ordersService.findAllOrders(dto);
 
         if(response.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body("주문서가 한 건도 존재하지 않습니다.");
         }
-
         return ResponseEntity.ok(response);
     }
     /**
@@ -68,7 +71,9 @@ public class OrdersController {
      * @return 수정된 주문서 정보
      */
     @PutMapping("/update/{id}")
-    public ResponseEntity<OrdersResponseDetailDto> updateOrders(@PathVariable("id") Long id, @RequestBody OrdersCreateDto updateDto) {
+    public ResponseEntity<OrdersResponseDetailDto> updateOrders(@PathVariable("id") Long id, @RequestBody OrdersCreateDto updateDto, HttpServletRequest request) {
+        String test = request.getHeader("Authorization");
+        System.out.println(test);
         OrdersResponseDetailDto updatedOrders = ordersService.updateOrders(id, updateDto);
         return ResponseEntity.ok(updatedOrders);
     }
