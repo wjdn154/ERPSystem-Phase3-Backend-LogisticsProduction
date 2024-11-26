@@ -67,13 +67,13 @@ public class SecretManagerConfig {
     }
 
     public String getFinancialServiceUrl() {
-        return getCachedSecret("omz-env-secrets-backend", "CLUSTER_FINANCIAL_SERVICE_URL");
-//        return getCachedSecret("omz-env-secrets-backend", "LOCAL_FINANCIAL_SERVICE_URL");
+//        return getCachedSecret("omz-env-secrets-backend", "CLUSTER_FINANCIAL_SERVICE_URL");
+        return getCachedSecret("omz-env-secrets-backend", "LOCAL_FINANCIAL_SERVICE_URL");
     }
 
     public String getHumanResourceServiceUrl() {
-        return getCachedSecret("omz-env-secrets-backend", "CLUSTER_HR_SERVICE_URL");
-//        return getCachedSecret("omz-env-secrets-backend", "LOCAL_HR_SERVICE_URL");
+//        return getCachedSecret("omz-env-secrets-backend", "CLUSTER_HR_SERVICE_URL");
+        return getCachedSecret("omz-env-secrets-backend", "LOCAL_HR_SERVICE_URL");
     }
 
 

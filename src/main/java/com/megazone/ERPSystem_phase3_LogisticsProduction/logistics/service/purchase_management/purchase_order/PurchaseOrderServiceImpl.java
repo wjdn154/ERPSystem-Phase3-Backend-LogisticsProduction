@@ -16,6 +16,7 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.Employee;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.repository.basic_information_management.Employee.EmployeeRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.Product;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.Purchase;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.PurchaseOrder;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.PurchaseOrderDetail;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.dto.PurchaseOrderCreateDto;
@@ -71,18 +72,26 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService{
             purchaseOrders = purchaseOrderRepository.findBySearch(dto);
         }
 
+        List<Long> vatTypeIdList = new ArrayList<>();
+        for (PurchaseOrder purchaseOrder : purchaseOrders) {
+            vatTypeIdList.add(purchaseOrder.getVatId());
+        }
+
+        Map<Long,VatTypeShowDTO> vatTypeMap = vatTypeService.getVatTypeList(vatTypeIdList).stream()
+                .collect(Collectors.toMap(VatTypeShowDTO::getVatTypeId, v -> v));
+
         // 발주서가 없는 경우 빈 리스트 반환
         return purchaseOrders.isEmpty()
                 ? Collections.emptyList()
                 : purchaseOrders.stream()
-                .map(this::toListDto)
+                .map((purchaseOrder) -> toListDto(purchaseOrder,vatTypeMap))
                 .toList();
     }
 
 
     /** 발주서 목록 조회 관련 메서드 **/
     // Entity -> 발주서 목록 조회용 DTO 변환 메소드
-    private PurchaseOrderResponseDto toListDto(PurchaseOrder purchaseOrder) {
+    private PurchaseOrderResponseDto toListDto(PurchaseOrder purchaseOrder,Map<Long,VatTypeShowDTO> vatTypeMap) {
         return PurchaseOrderResponseDto.builder()
                 .id(purchaseOrder.getId())
                 .clientName(purchaseOrder.getClient().getPrintClientName())  // 첫 번째 품목의 거래처 이름
@@ -92,7 +101,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService{
                 .deliveryDate(purchaseOrder.getDeliveryDate())
                 .totalQuantity(getTotalQuantity(purchaseOrder))  // 총 수량
                 .totalPrice(getTotalPrice(purchaseOrder))  // 총 가격
-                .vatName(vatTypeService.getVatType(purchaseOrder.getVatId()).getVatTypeName())
+                .vatName(vatTypeMap.get(purchaseOrder.getVatId()).getVatTypeName())
                 .status(purchaseOrder.getStatus().toString())  // 진행 상태
                 .build();
     }

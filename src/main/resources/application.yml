@@ -77,6 +77,7 @@ spring:
         - classpath:initial-database/production/work_report/work_performance.sql
         - classpath:initial-database/production/work_report/environmental_certification_assessment.sql
         - classpath:initial-database/production/production_schedule/common_scheduling/worker_assignment.sql
+        - classpath:initial-database/logistics/purchase_management/purchase.sql
 
 logging:
   level:

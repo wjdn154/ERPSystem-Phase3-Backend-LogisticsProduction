@@ -8,8 +8,6 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class WorkerAttendanceDTO {
-
-
     private String attendanceCode;     //employee 의 attendance 의 근태코드
     private String attendanceDate;     //employee 의 attendance 의 날짜
     private String checkTime;          //employee 의 attendance 의 출근시간

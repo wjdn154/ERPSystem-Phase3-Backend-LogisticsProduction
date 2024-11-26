@@ -7,7 +7,12 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notifi
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.enums.EmploymentStatus;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.enums.EmploymentType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.repository.basic_information_management.Employee.EmployeeRepository;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.EmployeeService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.dto.EmployeeAttendanceDTO;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.dto.EmployeeOneDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.common_scheduling.WorkerAssignment;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.dto.WorkerAssignmentDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.resource_data.Worker;
@@ -19,9 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -34,6 +38,7 @@ public class WorkerServiceImpl implements WorkerService {
     private final WorkerAssignmentRepository workerAssignmentRepository;
     private final RecentActivityRepository recentActivityRepository;
     private final NotificationService notificationService;
+    private final EmployeeService employeeService;
 
     //작업자 상세 정보 수정(교육 이수 여부만 등록 가능)
     @Override
@@ -70,14 +75,31 @@ public class WorkerServiceImpl implements WorkerService {
 
         return Optional.of(workerDetailUpdateDTO);
     }
-
     //생산에 해당하는 작업자 목록 조회
     @Override
     public List<ListWorkerDTO> findAllWorker() {
 
         //해당 회사아이디에 해당하는 부서 작업자 목록 조회
         List<ListWorkerDTO> workerList = workerRepository.findAllWorkerByDepartment();
+        List<Long> employeeIdList = new ArrayList<>();
 
+        for (ListWorkerDTO workerDTO : workerList) {
+            employeeIdList.add(workerDTO.getEmployeeId());
+        }
+
+        List<EmployeeOneDTO> employeeList = employeeService.getListEmployee(employeeIdList);
+
+
+        Map<Long, EmployeeOneDTO> employeeDTOMap = employeeList.stream()
+                .collect(Collectors.toMap(EmployeeOneDTO::getId, e -> e));
+
+        for(ListWorkerDTO workerDTO : workerList) {
+            EmployeeOneDTO employeeInfo = employeeDTOMap.get(workerDTO.getEmployeeId());
+            workerDTO.setPositionName(employeeInfo.getPositionName());
+            workerDTO.setJobTitleName(employeeInfo.getTitleName());
+            workerDTO.setEmploymentStatus(employeeInfo.getEmploymentStatus());
+            workerDTO.setEmploymentType(employeeInfo.getEmploymentType());
+        }
 
         return workerList;
     }
@@ -106,21 +128,19 @@ public class WorkerServiceImpl implements WorkerService {
         Worker worker = workerRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(("작업자를 찾을 수 없습니다.") + id));
 
-//        List<Attendance> attendances = attendanceRepository.findByEmployee(worker.getEmployee());
+        List<EmployeeAttendanceDTO> attendances = employeeService.getEmployeeAttendances(worker.getEmployee().getId());
 
         //근태 관리 리스트 생성
-//        List<WorkerAttendanceDTO> attendanceList = attendances.stream()
-//                .map(attendance -> new WorkerAttendanceDTO(
-//                        attendance.getAttendanceCode(),
-//                        attendance.getDate().toString(),
-//                        attendance.getCheckInTime().toString(),
-//                        attendance.getCheckOutTime().toString(),
-//                        attendance.getStatus().toString()
-//                ))
-//                .sorted((a1, a2) -> a2.getAttendanceDate().compareTo(a1.getAttendanceDate()))    //날짜 기준 내림차순 정렬
-//                .toList();
-
-        List<WorkerAttendanceDTO> attendanceList = null;
+        List<WorkerAttendanceDTO> attendanceList = attendances.stream()
+                .map(attendance -> new WorkerAttendanceDTO(
+                        attendance.getAttendanceCode(),
+                        attendance.getDate().toString(),
+                        attendance.getCheckInTime().toString(),
+                        attendance.getCheckOutTime().toString(),
+                        attendance.getStatus().toString()
+                ))
+                .sorted((a1, a2) -> a2.getAttendanceDate().compareTo(a1.getAttendanceDate()))    //날짜 기준 내림차순 정렬
+                .toList();
 
 // 작업 배치 관리 리스트 생성
         List<WorkerAssignmentDTO> assignmentList = worker.getWorkerAssignments().stream()
@@ -149,6 +169,8 @@ public class WorkerServiceImpl implements WorkerService {
     //worker 엔티티를 WorkerDetailShowDTO 로 변환
     private WorkerDetailShowDTO workerToDTO(Worker worker) {
 
+        EmployeeOneDTO employee = employeeService.getOneEmployee(worker.getEmployee().getId());
+
         WorkerDetailShowDTO workerDetailShowDTO = new WorkerDetailShowDTO();
         workerDetailShowDTO.setId(worker.getId());
         workerDetailShowDTO.setTrainingStatus(worker.getTrainingStatus());
@@ -156,13 +178,13 @@ public class WorkerServiceImpl implements WorkerService {
         workerDetailShowDTO.setEmployeeFirstName(worker.getEmployee().getFirstName());
         workerDetailShowDTO.setEmployeeLastName(worker.getEmployee().getLastName());
         workerDetailShowDTO.setDepartmentName(worker.getEmployee().getDepartment().getDepartmentName());
-//        workerDetailShowDTO.setPositionName(worker.getEmployee().getPosition().getPositionName());
-//        workerDetailShowDTO.setJobTitleName(worker.getEmployee().getJobTitle().getJobTitleName());
-//        workerDetailShowDTO.setPhoneNumber(worker.getEmployee().getPhoneNumber());
-//        workerDetailShowDTO.setEmploymentStatus(worker.getEmployee().getEmploymentStatus());
-//        workerDetailShowDTO.setEmploymentType(worker.getEmployee().getEmploymentType());
-//        workerDetailShowDTO.setHireDate(worker.getEmployee().getHireDate());
-//        workerDetailShowDTO.setProfilePicture(worker.getEmployee().getImagePath());
+        workerDetailShowDTO.setPositionName(employee.getPositionName());
+        workerDetailShowDTO.setJobTitleName(employee.getTitleName());
+        workerDetailShowDTO.setPhoneNumber(employee.getPhoneNumber());
+        workerDetailShowDTO.setEmploymentStatus(employee.getEmploymentStatus());
+        workerDetailShowDTO.setEmploymentType(employee.getEmploymentType());
+        workerDetailShowDTO.setHireDate(employee.getHireDate());
+        workerDetailShowDTO.setProfilePicture(employee.getProfilePicture());
 
         //작업배치가 비어있지 않다면 배치 날짜 기준으로 가장 최근의 작업배치 정보 가져오기
         if(worker.getWorkerAssignments() != null && !worker.getWorkerAssignments().isEmpty()){
@@ -172,15 +194,6 @@ public class WorkerServiceImpl implements WorkerService {
             workerDetailShowDTO.setWorkcenterCode(recentAssignment.getWorkcenter().getCode());
             workerDetailShowDTO.setWorkcenterName(recentAssignment.getWorkcenter().getName());
         }
-//        List<WorkerAssignmentDTO> workerAssignmentDTOS = worker.getWorkerAssignments().stream()
-//                .map(assignment -> {
-//                    WorkerAssignmentDTO dto = new WorkerAssignmentDTO();
-//                    dto.setId(assignment.getId());
-//                    dto.setWorkcenterCode(assignment.getWorkcenter().getCode());
-//                    dto.setWorkcenterName(assignment.getWorkcenter().getName());
-//                    return dto;
-//                })
-//                .collect(Collectors.toList());
 
         return workerDetailShowDTO;
     }
