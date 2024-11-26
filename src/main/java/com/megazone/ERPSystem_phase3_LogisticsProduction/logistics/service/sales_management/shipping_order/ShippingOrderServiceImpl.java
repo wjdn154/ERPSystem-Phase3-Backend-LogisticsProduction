@@ -1,13 +1,14 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.service.sales_management.shipping_order;
 
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.model.basic_information_management.client.Client;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.client.ClientRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.Employee;
@@ -50,7 +51,7 @@ public class ShippingOrderServiceImpl implements ShippingOrderService {
     private final WarehouseRepository warehouseRepository;
     private final CurrencyRepository currencyRepository;
     private final ProductRepository productRepository;
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
 
 
@@ -184,17 +185,16 @@ public class ShippingOrderServiceImpl implements ShippingOrderService {
             ShippingOrder shippingOrder = toEntity(createDto);
             shippingOrder = shippingOrderRepository.save(shippingOrder);
 
-            recentActivityRepository.save(RecentActivity.builder()
-                    .activityDescription("신규 출하지시서 등록 : " + shippingOrder.getDate() + " -" + shippingOrder.getId())
-                    .activityType(ActivityType.LOGISTICS)
-                    .activityTime(LocalDateTime.now())
-                    .build());
-            notificationService.createAndSendNotification(
-                    ModuleType.LOGISTICS,
-                    PermissionType.USER,
-                    "신규 출하지시서 (" + shippingOrder.getDate() + " -" + shippingOrder.getId() + ") 가 등록되었습니다.",
-                    NotificationType.NEW_ENTRY
-            );
+            integratedService.recentActivitySave(
+                    RecentActivityEntryDTO.create(
+                            "신규 출하지시서 등록 : " + shippingOrder.getDate() + " -" + shippingOrder.getId(),
+                            ActivityType.LOGISTICS));
+            notificationService.createAndSend(
+                    UserNotificationCreateAndSendDTO.create(
+                            ModuleType.LOGISTICS,
+                            PermissionType.USER,
+                            "신규 출하지시서 (" + shippingOrder.getDate() + " -" + shippingOrder.getId() + ") 가 등록되었습니다.",
+                            NotificationType.NEW_ENTRY));
             return toDetailDto(shippingOrder);
         } catch (Exception e) {
             log.error("출하지시서 생성 실패: ", e);

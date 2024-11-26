@@ -1,12 +1,15 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.basic_data.process_routing.ProcessRouting;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+
+
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.process_routing.dto.ProcessRoutingDetailDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.Product;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.dto.ProductDetailDto;
@@ -46,7 +49,7 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
     private final ProcessDetailsRepository processDetailsRepository;
     private final ProductRepository productRepository;
     private final RoutingStepRepository routingStepRepository;
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
 //    private final ProductGroupRepository productGroupRepository;
 
@@ -315,18 +318,16 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
 
         routingStepRepository.flush();
 
-        recentActivityRepository.save(RecentActivity.builder()
-                .activityDescription(existingRouting.getName() + "루트 정보 변경")
-                .activityType(ActivityType.PRODUCTION)
-                .activityTime(LocalDateTime.now())
-                .build());
-
-
-        notificationService.createAndSendNotification(
-                ModuleType.PRODUCTION,
-                PermissionType.ALL,
-                existingRouting.getName() + "루트 정보가 변경되었습니다.",
-                NotificationType.UPDATE_ROUT);
+        integratedService.recentActivitySave(
+                RecentActivityEntryDTO.create(
+                        existingRouting.getName() + "루트 정보 변경",
+                        ActivityType.PRODUCTION));
+        notificationService.createAndSend(
+                UserNotificationCreateAndSendDTO.create(
+                        ModuleType.PRODUCTION,
+                        PermissionType.ALL,
+                        existingRouting.getName() + "루트 정보가 변경되었습니다.",
+                        NotificationType.UPDATE_ROUT));
 
         return new ProcessRoutingDetailDTO(
                 existingRouting.getId(),

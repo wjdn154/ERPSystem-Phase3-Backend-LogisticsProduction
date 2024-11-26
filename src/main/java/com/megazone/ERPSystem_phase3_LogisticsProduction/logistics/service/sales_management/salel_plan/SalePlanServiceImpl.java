@@ -1,12 +1,13 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.service.sales_management.salel_plan;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.client.ClientRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.Employee;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.repository.basic_information_management.Employee.EmployeeRepository;
@@ -49,7 +50,7 @@ SalePlanServiceImpl implements SalePlanService {
     private final WarehouseRepository warehouseRepository;
     private final CurrencyRepository currencyRepository;
     private final ProductRepository productRepository;
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
 
     /**
@@ -189,17 +190,16 @@ SalePlanServiceImpl implements SalePlanService {
             SalePlan salePlan = toEntity(createDto);
             salePlan = salePlanRepository.save(salePlan);
 
-            recentActivityRepository.save(RecentActivity.builder()
-                    .activityDescription("신규 판매계획 등록 : " + salePlan.getDate() + " -" + salePlan.getId())
-                    .activityType(ActivityType.LOGISTICS)
-                    .activityTime(LocalDateTime.now())
-                    .build());
-            notificationService.createAndSendNotification(
-                    ModuleType.LOGISTICS,
-                    PermissionType.USER,
-                    "신규 판매계획 (" + salePlan.getDate() + " -" + salePlan.getId() + ") 이 등록되었습니다.",
-                    NotificationType.NEW_ENTRY
-            );
+            integratedService.recentActivitySave(
+                    RecentActivityEntryDTO.create(
+                            "신규 판매계획 등록 : " + salePlan.getDate() + " -" + salePlan.getId(),
+                            ActivityType.LOGISTICS));
+            notificationService.createAndSend(
+                    UserNotificationCreateAndSendDTO.create(
+                            ModuleType.LOGISTICS,
+                            PermissionType.USER,
+                            "신규 판매계획 (" + salePlan.getDate() + " -" + salePlan.getId() + ") 이 등록되었습니다.",
+                            NotificationType.NEW_ENTRY));
 
             return toDetailDto(salePlan);
         } catch (Exception e) {

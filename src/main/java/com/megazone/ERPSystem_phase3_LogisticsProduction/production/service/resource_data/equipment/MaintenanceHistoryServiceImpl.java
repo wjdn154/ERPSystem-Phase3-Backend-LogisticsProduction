@@ -1,12 +1,13 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.resource_data.equipment;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.company.CompanyRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.resource_data.equipment.EquipmentData;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.resource_data.equipment.MaintenanceHistory;
@@ -33,7 +34,7 @@ public class MaintenanceHistoryServiceImpl implements MaintenanceHistoryService 
     private final MaintenanceHistoryRepository maintenanceHistoryRepository;
     private final EquipmentDataRepository equipmentDataRepository;
     private final CompanyRepository companyRepository;
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
     //유지보수 이력 리스트 조회
     @Override
@@ -78,18 +79,16 @@ public class MaintenanceHistoryServiceImpl implements MaintenanceHistoryService 
         //엔티티 저장
         MaintenanceHistory savedMaintenanceHistory = maintenanceHistoryRepository.save(maintenanceHistory);
 
-        recentActivityRepository.save(RecentActivity.builder()
-                .activityDescription("유지보수 1건 생성")
-                .activityType(ActivityType.PRODUCTION)
-                .activityTime(LocalDateTime.now())
-                .build());
-
-
-        notificationService.createAndSendNotification(
-                ModuleType.PRODUCTION,
-                PermissionType.ALL,
-                savedMaintenanceHistory.getEquipment().getEquipmentName() + "의 유지보수 이력 1건 생성되었습니다.",
-                NotificationType.NEW_MAINTENANCE_HISTORY);
+        integratedService.recentActivitySave(
+                RecentActivityEntryDTO.create(
+                        "유지보수 1건 생성",
+                        ActivityType.PRODUCTION));
+        notificationService.createAndSend(
+                UserNotificationCreateAndSendDTO.create(
+                        ModuleType.PRODUCTION,
+                        PermissionType.ALL,
+                        savedMaintenanceHistory.getEquipment().getEquipmentName() + "의 유지보수 이력 1건 생성되었습니다.",
+                        NotificationType.NEW_MAINTENANCE_HISTORY));
 
         //엔티티를 DTO로 변환하여 반환
         MaintenanceHistoryDetailShowDTO maintenanceHistoryDTO = maintenanceToShowDTO(savedMaintenanceHistory);
@@ -123,18 +122,16 @@ public class MaintenanceHistoryServiceImpl implements MaintenanceHistoryService 
         //업데이트된 엔티티 저장
         MaintenanceHistory updateMaintenanceHistory = maintenanceHistoryRepository.save(maintenanceHistory);
 
-        recentActivityRepository.save(RecentActivity.builder()
-                .activityDescription(updateMaintenanceHistory.getEquipment().getEquipmentName() + "의 유지보수 1건 변경")
-                .activityType(ActivityType.PRODUCTION)
-                .activityTime(LocalDateTime.now())
-                .build());
-
-
-        notificationService.createAndSendNotification(
-                ModuleType.PRODUCTION,
-                PermissionType.ALL,
-                updateMaintenanceHistory.getEquipment().getEquipmentName() + "의 유지보수 1건 변경되었습니다.",
-                NotificationType.UPDATE_MAINTENANCE_HISTORY);
+        integratedService.recentActivitySave(
+                RecentActivityEntryDTO.create(
+                        updateMaintenanceHistory.getEquipment().getEquipmentName() + "의 유지보수 1건 변경",
+                        ActivityType.PRODUCTION));
+        notificationService.createAndSend(
+                UserNotificationCreateAndSendDTO.create(
+                        ModuleType.PRODUCTION,
+                        PermissionType.ALL,
+                        updateMaintenanceHistory.getEquipment().getEquipmentName() + "의 유지보수 1건 변경되었습니다.",
+                        NotificationType.UPDATE_MAINTENANCE_HISTORY));
 
         //저장된 엔티티 dto로 변환
         MaintenanceHistoryDetailShowDTO MaintenanceHistoryUpdateDetailDTO = maintenanceToShowDTO(updateMaintenanceHistory);

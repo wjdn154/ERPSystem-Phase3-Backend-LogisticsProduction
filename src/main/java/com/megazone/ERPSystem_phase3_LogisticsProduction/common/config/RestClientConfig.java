@@ -26,4 +26,18 @@ public class RestClientConfig {
                 .baseUrl(secretManagerConfig.getHumanResourceServiceUrl())
                 .build();
     }
+
+    @Bean
+    public RestClient notificationServiceClient() {
+        return RestClient.builder()
+                .baseUrl("http://localhost:8082/api/notifications/")
+                .build();
+    }
+
+    @Bean
+    public RestClient integratedServiceClient() {
+        return RestClient.builder()
+                .baseUrl("http://localhost:8082/api/integrated/")
+                .build();
+    }
 }

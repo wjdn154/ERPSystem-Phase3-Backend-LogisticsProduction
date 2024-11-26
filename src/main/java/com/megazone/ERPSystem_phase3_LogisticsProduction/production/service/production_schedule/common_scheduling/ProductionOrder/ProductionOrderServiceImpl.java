@@ -1,14 +1,12 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.production_schedule.common_scheduling.ProductionOrder;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.EnvironmentalCertificationAssessment;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.EnvironmentalCertificationAssessmentRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+
+
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.bom.StandardBom;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.process_routing.ProcessDetails;
@@ -68,10 +66,7 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
     private final EnvironmentalCertificationAssessmentRepository environmentalCertificationAssessmentRepository;
     private final RecentActivityRepository recentActivityRepository;
     private final NotificationService notificationService;
-
-//    private final PlanOfMakeToOrderRepository planOfMakeToOrderRepository;
-//    private final PlanOfMakeToStockRepository planOfMakeToStockRepository;
-
+    
     // MPS로부터 자동으로 ProductionOrder 생성
     public void createOrdersFromMps(Mps mps) {
         ProductionOrder order = ProductionOrder.builder()
