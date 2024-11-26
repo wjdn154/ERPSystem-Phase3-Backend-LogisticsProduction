@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/logistics/sale-plans")
 public class SalePlanController {
@@ -27,7 +27,7 @@ public class SalePlanController {
      * @return
      */
     @PostMapping("/")
-    public ResponseEntity<?> getAllSalePlans(@RequestBody(required = false) SearchDTO dto) {
+    public ResponseEntity<?> getAllSalePlans(@RequestBody SearchDTO dto) {
         List<SalePlanResponseDto> response = salePlanService.findAllSalePlans(dto);
 
         if(response.isEmpty()){
