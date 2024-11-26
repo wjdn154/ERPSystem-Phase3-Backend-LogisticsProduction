@@ -15,6 +15,4 @@ public class SearchDTO {
     private LocalDate endDate;
     private Long clientId;
     private String state;
-
-
 }
