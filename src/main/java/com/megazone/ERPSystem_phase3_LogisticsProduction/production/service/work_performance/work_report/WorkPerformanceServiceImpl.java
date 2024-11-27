@@ -100,6 +100,7 @@ public class WorkPerformanceServiceImpl implements WorkPerformanceService{
         return workPerformanceRepository.monthlyReport(dto);
     }
 
+
     // 엔티티를 WorkPerformanceDetailDTO로 변환
     private WorkPerformanceDetailDTO workPerformanceToDTO(WorkPerformance workPerformance) {
 
@@ -161,5 +162,10 @@ public class WorkPerformanceServiceImpl implements WorkPerformanceService{
      */
     private Long getProductionOrderIdByWorkPerformance(Long workPerformanceId) {
         return workPerformanceRepository.findProductionOrderIdByWorkPerformanceId(workPerformanceId);
+    }
+
+    @Override
+    public BigDecimal workPerformanceCalculator() {
+        return workPerformanceRepository.findAll().stream().map(WorkPerformance::getAcceptableQuantity).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

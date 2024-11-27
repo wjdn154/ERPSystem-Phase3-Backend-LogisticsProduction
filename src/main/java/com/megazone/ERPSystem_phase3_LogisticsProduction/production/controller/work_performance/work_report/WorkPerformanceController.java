@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -77,6 +78,17 @@ public class WorkPerformanceController {
             return ResponseEntity.status(HttpStatus.OK).body(report);
         }catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("월간 보고서 조회 실패, 이유 : " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/workPerformance/totalWorkPerformance")
+    public ResponseEntity<Object> totalWorkPerformance() {
+        try {
+            BigDecimal totalWorkPerformance = workPerformanceService.workPerformanceCalculator();
+            return ResponseEntity.status(HttpStatus.OK).body(totalWorkPerformance);
+        }
+        catch(Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 

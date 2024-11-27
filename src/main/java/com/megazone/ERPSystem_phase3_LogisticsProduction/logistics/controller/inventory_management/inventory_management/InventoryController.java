@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -75,6 +76,17 @@ public class InventoryController {
     public ResponseEntity<Long> getNextInventoryNumber() {
         Long nextInventoryNumber = inventoryService.generateNextInventoryNumber();
         return ResponseEntity.ok(nextInventoryNumber);
+    }
+
+    @PostMapping("/inventoryCount")
+    public ResponseEntity<Object> inventoryCount() {
+        try {
+            BigDecimal count = inventoryService.allInventoryCount();
+            return ResponseEntity.status(HttpStatus.OK).body(count);
+        }
+        catch(Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
 }

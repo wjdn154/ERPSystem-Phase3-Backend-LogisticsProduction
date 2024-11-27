@@ -1,11 +1,13 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.resource_data.equipment;
 
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-
-
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.company.CompanyRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.warehouse_management.warehouse.Warehouse;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.basic_information_management.warehouse.WarehouseRepository;
@@ -42,7 +44,7 @@ public class EquipmentDataServiceImpl implements EquipmentDataService {
     private final CompanyRepository companyRepository;
     private final EquipmentDataImageService equipmentDataImageService;
     private static final String UPLOAD_DIR = "src/main/resources/static";
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
 
     //설비 등록.저장
@@ -59,18 +61,17 @@ public class EquipmentDataServiceImpl implements EquipmentDataService {
        // 엔티티 저장
         EquipmentData saveEquipment = equipmentDataRepository.save(equipmentData);
 
-        recentActivityRepository.save(RecentActivity.builder()
-                .activityDescription("신규 설비 1건 생성")
-                .activityType(ActivityType.PRODUCTION)
-                .activityTime(LocalDateTime.now())
-                .build());
+        integratedService.recentActivitySave(
+                RecentActivityEntryDTO.create(
+                        "신규 설비 1건 생성",
+                        ActivityType.PRODUCTION));
 
-
-        notificationService.createAndSendNotification(
-                ModuleType.PRODUCTION,
-                PermissionType.ALL,
-                "신규 설비 1건 생성되었습니다.",
-                NotificationType.NEW_EQUIPMENT_DATA);
+        notificationService.createAndSend(
+                UserNotificationCreateAndSendDTO.create(
+                        ModuleType.PRODUCTION,
+                        PermissionType.ALL,
+                        "신규 설비 1건 생성되었습니다.",
+                        NotificationType.NEW_EQUIPMENT_DATA));
 
        // 엔티티를 dto로 변환하여 반환
         EquipmentDataShowDTO equipmentDataDTO = equipmentShowToDTO(saveEquipment);
@@ -129,18 +130,16 @@ public class EquipmentDataServiceImpl implements EquipmentDataService {
         //업데이트된 엔티티 저장.
         EquipmentData updatedEquipmentEntity =equipmentDataRepository.save(equipmentData);
 
-        recentActivityRepository.save(RecentActivity.builder()
-                .activityDescription(updatedEquipmentEntity.getEquipmentName() +" 설비 정보 변경")
-                .activityType(ActivityType.PRODUCTION)
-                .activityTime(LocalDateTime.now())
-                .build());
-
-
-        notificationService.createAndSendNotification(
-                ModuleType.PRODUCTION,
-                PermissionType.ALL,
-                updatedEquipmentEntity.getEquipmentName() +" 설비 정보가 변경되었습니다.",
-                NotificationType.UPDATE_EQUIPMENT_DATA);
+        integratedService.recentActivitySave(
+                RecentActivityEntryDTO.create(
+                        updatedEquipmentEntity.getEquipmentName() +" 설비 정보 변경",
+                        ActivityType.PRODUCTION));
+        notificationService.createAndSend(
+                UserNotificationCreateAndSendDTO.create(
+                        ModuleType.PRODUCTION,
+                        PermissionType.ALL,
+                        updatedEquipmentEntity.getEquipmentName() +" 설비 정보가 변경되었습니다.",
+                        NotificationType.UPDATE_EQUIPMENT_DATA));
 
         //저장된 엔티티 dto로 변환.
         EquipmentDataUpdateDTO equipmentDataUpdateDTO = equipmentUpdateToDTO(updatedEquipmentEntity);
