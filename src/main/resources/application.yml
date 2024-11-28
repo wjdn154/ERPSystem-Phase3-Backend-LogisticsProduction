@@ -80,8 +80,8 @@ spring:
 
 logging:
   level:
-    root: DEBUG
-#    root: INFO
+#    root: DEBUG
+    root: INFO
 #    com.megazone: DEBUG
 #    org.flywaydb: DEBUG
 #    org.hibernate.boot.model.naming: TRACE # 신규
