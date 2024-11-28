@@ -84,7 +84,7 @@ logging:
 #    root: INFO
 #    com.megazone: DEBUG
 #    org.flywaydb: DEBUG
-    org.hibernate.boot.model.naming: TRACE # 신규
-    org.hibernate.SQL: DEBUG
+#    org.hibernate.boot.model.naming: TRACE # 신규
+#    org.hibernate.SQL: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} %-5level %highlight(%-5level) %logger{36} - %msg%n"
