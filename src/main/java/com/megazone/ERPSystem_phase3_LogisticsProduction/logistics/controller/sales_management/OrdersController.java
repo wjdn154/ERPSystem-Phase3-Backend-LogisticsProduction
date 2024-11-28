@@ -28,8 +28,6 @@ public class OrdersController {
      */
     @PostMapping("/")
     public ResponseEntity<?> getOrders(@RequestBody(required = false) SearchDTO dto, HttpServletRequest request) {
-        String test = request.getHeader("Authorization");
-        System.out.println(test);
         List<OrdersResponseDto> response = ordersService.findAllOrders(dto);
 
         if(response.isEmpty()) {
@@ -72,8 +70,6 @@ public class OrdersController {
      */
     @PutMapping("/update/{id}")
     public ResponseEntity<OrdersResponseDetailDto> updateOrders(@PathVariable("id") Long id, @RequestBody OrdersCreateDto updateDto, HttpServletRequest request) {
-        String test = request.getHeader("Authorization");
-        System.out.println(test);
         OrdersResponseDetailDto updatedOrders = ordersService.updateOrders(id, updateDto);
         return ResponseEntity.ok(updatedOrders);
     }
