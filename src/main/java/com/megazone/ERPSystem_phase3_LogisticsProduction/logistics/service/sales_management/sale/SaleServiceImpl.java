@@ -1,13 +1,14 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.service.sales_management.sale;
 
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.model.basic_information_management.voucher_entry.sales_and_purchase_voucher_entry.enums.ElectronicTaxInvoiceStatus;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.client.ClientRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.VatTypeService;
@@ -31,7 +32,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -53,9 +53,9 @@ public class SaleServiceImpl implements SaleService {
     private final WarehouseRepository warehouseRepository;
     private final CurrencyRepository currencyRepository;
     private final ProductRepository productRepository;
-    private final RecentActivityRepository recentActivityRepository;
-    private final NotificationService notificationService;
     private final VatTypeService vatTypeService;
+    private final IntegratedService integratedService;
+    private final NotificationService notificationService;
 
 
     @Override
@@ -204,17 +204,16 @@ public class SaleServiceImpl implements SaleService {
             Sale sale = toEntity(createDto);
             sale = saleRepository.save(sale);
 
-            recentActivityRepository.save(RecentActivity.builder()
-                    .activityDescription("신규 판매 등록 : " + sale.getDate() + " -" + sale.getId())
-                    .activityType(ActivityType.LOGISTICS)
-                    .activityTime(LocalDateTime.now())
-                    .build());
-            notificationService.createAndSendNotification(
-                    ModuleType.LOGISTICS,
-                    PermissionType.USER,
-                    "신규 판매 (" + sale.getDate() + " -" + sale.getId() + ") 가 등록되었습니다.",
-                    NotificationType.NEW_ENTRY
-            );
+            integratedService.recentActivitySave(
+                    RecentActivityEntryDTO.create(
+                            "신규 판매 등록 : " + sale.getDate() + " -" + sale.getId(),
+                            ActivityType.LOGISTICS));
+            notificationService.createAndSend(
+                    UserNotificationCreateAndSendDTO.create(
+                            ModuleType.LOGISTICS,
+                            PermissionType.USER,
+                            "신규 판매 (" + sale.getDate() + " -" + sale.getId() + ") 가 등록되었습니다.",
+                            NotificationType.NEW_ENTRY));
             return toDetailDto(sale);
         } catch (Exception e) {
             log.error("판매서 생성 실패: ", e);

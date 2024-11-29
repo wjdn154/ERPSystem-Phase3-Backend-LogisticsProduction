@@ -1,18 +1,20 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.production_schedule.common_scheduling.ProductionOrder;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.EnvironmentalCertificationAssessment;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.EnvironmentalCertificationSaveDTO;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.EnvironmentalCertificationAssessmentRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.bom.StandardBom;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.process_routing.ProcessDetails;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.workcenter.Workcenter;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.dto.CalculatorDTO;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.dto.CalculatorResponseDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.dto.WorkerAssignmentDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.common_scheduling.ProductionOrder;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.common_scheduling.ShiftType;
@@ -43,7 +45,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
@@ -65,13 +66,9 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
     private final StandardBomRepository standardBomRepository;
     private final StandardBomMaterialRepository standardBomMaterialRepository;
     private final EquipmentDataRepository equipmentRepository;
-    private final EnvironmentalCertificationAssessmentRepository environmentalCertificationAssessmentRepository;
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
-
-//    private final PlanOfMakeToOrderRepository planOfMakeToOrderRepository;
-//    private final PlanOfMakeToStockRepository planOfMakeToStockRepository;
-
+    
     // MPS로부터 자동으로 ProductionOrder 생성
     public void createOrdersFromMps(Mps mps) {
         ProductionOrder order = ProductionOrder.builder()
@@ -93,6 +90,7 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
         productionOrderRepository.save(productionOrder);
         return true;
     }
+
 
     /**
      * 작업 지시 조회 by ID
@@ -132,17 +130,16 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
 
         ProductionOrder savedProductionOrder = productionOrderRepository.save(productionOrder);
 
-        recentActivityRepository.save(RecentActivity.builder()
-                .activityDescription(savedProductionOrder.getName() + "신규 작업지시 생성")
-                .activityType(ActivityType.PRODUCTION)
-                .activityTime(LocalDateTime.now())
-                .build());
-
-        notificationService.createAndSendNotification(
-                ModuleType.PRODUCTION,
-                PermissionType.ALL,
-                savedProductionOrder.getName() + "신규 작업지시가 생성되었습니다..",
-                NotificationType.UPDATE_PRODUCTION_ORDER);
+        integratedService.recentActivitySave(
+                RecentActivityEntryDTO.create(
+                        savedProductionOrder.getName() + "신규 작업지시 생성",
+                        ActivityType.PRODUCTION));
+        notificationService.createAndSend(
+                UserNotificationCreateAndSendDTO.create(
+                        ModuleType.PRODUCTION,
+                        PermissionType.ALL,
+                        savedProductionOrder.getName() + "신규 작업지시가 생성되었습니다..",
+                        NotificationType.UPDATE_PRODUCTION_ORDER));
 
 //        assignWorkersToWorkcenter(productionOrderDTO, savedProductionOrder);
 
@@ -334,56 +331,22 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
 
         workPerformanceRepository.save(workPerformance);
 
-        Optional<EnvironmentalCertificationAssessment> ECA = environmentalCertificationAssessmentRepository.findByMonth(YearMonth.from(dto.getActualEndDateTime()));
+        // 대시보드 환경점수 저장
+        integratedService.environmentalCertification(new EnvironmentalCertificationSaveDTO(
+                YearMonth.from(dto.getActualEndDateTime()),
+                actualWasteGenerated,
+                actualEnergyConsumption,
+                averageWasteGenerated,
+                averageEnergyConsumption));
 
-        if (ECA.isEmpty()) {
-            Integer wasteScore = calculateWasteScore(actualWasteGenerated, averageWasteGenerated);
-            Integer energyScore = calculateEnergyScore(actualEnergyConsumption, averageEnergyConsumption);
-            Integer totalScore = (wasteScore + energyScore) / 2;
-
-            EnvironmentalCertificationAssessment newECA = EnvironmentalCertificationAssessment.builder()
-                    .month(YearMonth.from(dto.getActualEndDateTime()))
-                    .totalWasteGenerated(actualWasteGenerated)
-                    .totalEnergyConsumed(actualEnergyConsumption)
-                    .totalIndustryAverageWasteGenerated(averageWasteGenerated)
-                    .totalIndustryAverageEnergyConsumed(averageEnergyConsumption)
-                    .wasteScore(wasteScore)
-                    .energyScore(energyScore)
-                    .totalScore(totalScore)
-                    .createdDate(LocalDateTime.now())
-                    .modifiedDate(LocalDateTime.now())
-                    .build();
-            environmentalCertificationAssessmentRepository.save(newECA);
-        } else {
-            EnvironmentalCertificationAssessment existingECA = ECA.get();
-            BigDecimal totalWasteGenerated = existingECA.getTotalWasteGenerated().add(actualWasteGenerated);
-            BigDecimal totalEnergyConsumed = existingECA.getTotalEnergyConsumed().add(actualEnergyConsumption);
-            BigDecimal totalAverageWasteGenerated = existingECA.getTotalIndustryAverageWasteGenerated().add(averageWasteGenerated);
-            BigDecimal totalAverageEnergyConsumption = existingECA.getTotalIndustryAverageEnergyConsumed().add(averageEnergyConsumption);
-            Integer wasteScore = calculateWasteScore(totalWasteGenerated, totalAverageWasteGenerated);
-            Integer energyScore = calculateEnergyScore(totalEnergyConsumed, totalAverageEnergyConsumption);
-            Integer totalScore = (wasteScore + energyScore) / 2;
-
-            existingECA.setTotalWasteGenerated(totalWasteGenerated);
-            existingECA.setTotalEnergyConsumed(totalEnergyConsumed);
-            existingECA.setTotalIndustryAverageWasteGenerated(totalAverageWasteGenerated);
-            existingECA.setTotalIndustryAverageEnergyConsumed(totalAverageEnergyConsumption);
-            existingECA.setWasteScore(wasteScore);
-            existingECA.setEnergyScore(energyScore);
-            existingECA.setTotalScore(totalScore);
-            existingECA.setModifiedDate(LocalDateTime.now());
-
-            environmentalCertificationAssessmentRepository.save(existingECA);
-        }
-
-        recentActivityRepository.save(RecentActivity.builder()
-                .activityType(ActivityType.PRODUCTION)
-                .activityDescription(productionOrder.getMps().getProduct().getName() + " " + dto.getQuantity().subtract(dto.getDefectiveQuantity()) + " 개 생산 완료, 작업지시 마감 처리 완료")
-                .activityTime(LocalDateTime.now())
-                .build());
+        integratedService.recentActivitySave(
+                RecentActivityEntryDTO.create(
+                        productionOrder.getMps().getProduct().getName() + " " + dto.getQuantity().subtract(dto.getDefectiveQuantity()) + " 개 생산 완료, 작업지시 마감 처리 완료",
+                ActivityType.PRODUCTION));
     }
 
     // 폐기물 발생량 점수 계산 함수
+    @Override
     public Integer calculateWasteScore(BigDecimal actualWaste, BigDecimal averageWaste) {
         BigDecimal wasteRatio = (averageWaste.compareTo(BigDecimal.ZERO) != 0) ?
                 actualWaste.divide(averageWaste, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) :
@@ -408,6 +371,7 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
     }
 
     // 에너지 사용량 점수 계산 함수
+    @Override
     public Integer calculateEnergyScore(BigDecimal actualEnergy, BigDecimal averageEnergy) {
         BigDecimal energyRatio = (averageEnergy.compareTo(BigDecimal.ZERO) != 0) ?
                 actualEnergy.divide(averageEnergy, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) :
@@ -431,8 +395,18 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
         return Math.max(score, 0); // 음수 방지, 최소 0점
     }
 
+    @Override
+    public CalculatorResponseDTO scoreCalculatorAll(CalculatorDTO dto) {
+        CalculatorResponseDTO responseDTO = new CalculatorResponseDTO();
+
+        responseDTO.setWasteScore(calculateWasteScore(dto.getWasteActualData(),dto.getWasteAverageData()));
+        responseDTO.setEnergyScore(calculateEnergyScore(dto.getEnergyActualData(),dto.getEnergyAverageData()));
+        return responseDTO;
+    }
+
+
     // 폐기물 발생량 계산 함수
-    private BigDecimal calculateWaste(ProductionOrder productionOrder, BigDecimal workQuantity) {
+    public BigDecimal calculateWaste(ProductionOrder productionOrder, BigDecimal workQuantity) {
         StandardBom bom = standardBomRepository.findByProductId(productionOrder.getMps().getProduct().getId()).get(0);
 
         return standardBomMaterialRepository.findByBomId(bom.getId()).stream()
@@ -449,7 +423,7 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
     }
 
     // 실제 에너지 사용량 계산 함수
-    private BigDecimal calculateActualEnergy(ProductionOrder productionOrder, BigDecimal workHours) {
+    public BigDecimal calculateActualEnergy(ProductionOrder productionOrder, BigDecimal workHours) {
 
         // 장비별 에너지 소비량 계산 후 합산
         return equipmentRepository.findByWorkcenterId(productionOrder.getWorkcenter().getId()).stream()
@@ -463,7 +437,7 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
     }
 
     // 산업 평균 에너지 사용량 계산 함수
-    private BigDecimal calculateAverageEnergy(ProductionOrder productionOrder, BigDecimal workQuantity) {
+    public BigDecimal calculateAverageEnergy(ProductionOrder productionOrder, BigDecimal workQuantity) {
         StandardBom bom = standardBomRepository.findByProductId(productionOrder.getMps().getProduct().getId()).get(0);
         return standardBomMaterialRepository.findByBomId(bom.getId()).stream()
                 .map(bomMaterial -> {
@@ -533,6 +507,5 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
                 .assignmentDate(workerAssignment.getAssignmentDate())
                 .build();
     }
-
 
 }

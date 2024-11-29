@@ -2,6 +2,7 @@ package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.wor
 
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.work_performance.work_report.dto.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,4 +19,5 @@ public interface WorkPerformanceService {
 
     List<MonthlyReportDTO> monthlyReport(DailyAndMonthlyReportSearchDTO dto);
 
+    BigDecimal workPerformanceCalculator();
 }

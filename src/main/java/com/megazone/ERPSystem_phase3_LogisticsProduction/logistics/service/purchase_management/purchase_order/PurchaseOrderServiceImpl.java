@@ -1,12 +1,13 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.service.purchase_management.purchase_order;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.model.basic_information_management.client.Client;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.model.basic_information_management.voucher_entry.sales_and_purchase_voucher_entry.enums.ElectronicTaxInvoiceStatus;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.client.ClientRepository;
@@ -16,7 +17,6 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.Employee;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.repository.basic_information_management.Employee.EmployeeRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.Product;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.Purchase;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.PurchaseOrder;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.PurchaseOrderDetail;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.dto.PurchaseOrderCreateDto;
@@ -52,9 +52,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService{
     private final WarehouseRepository warehouseRepository;
     private final CurrencyRepository currencyRepository;
     private final ProductRepository productRepository;
-    private final RecentActivityRepository recentActivityRepository;
-    private final NotificationService notificationService;
     private final VatTypeService vatTypeService;
+    private final IntegratedService integratedService;
+    private final NotificationService notificationService;
     /**
      * 발주서 목록 조회
      * @return
@@ -225,18 +225,18 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService{
             PurchaseOrder purchaseOrder = toEntity(createDto);
             purchaseOrder = purchaseOrderRepository.save(purchaseOrder);
 
-            recentActivityRepository.save(RecentActivity.builder()
-                    .activityDescription("신규 발주서 등록 : " + purchaseOrder.getDate() + " -" + purchaseOrder.getId())
-                    .activityType(ActivityType.LOGISTICS)
-                    .activityTime(LocalDateTime.now())
-                    .build());
-            notificationService.createAndSendNotification(
-                    ModuleType.LOGISTICS,
-                    PermissionType.USER,
-                    "신규 발주서 (" + purchaseOrder.getDate() + " -" + purchaseOrder.getId() + ") 가 등록되었습니다.",
-                    NotificationType.NEW_ENTRY
-            );
 
+            integratedService.recentActivitySave(
+                    RecentActivityEntryDTO.create(
+                            "신규 발주서 등록 : " + purchaseOrder.getDate() + " -" + purchaseOrder.getId(),
+                            ActivityType.LOGISTICS));
+
+            notificationService.createAndSend(
+                    UserNotificationCreateAndSendDTO.create(
+                            ModuleType.LOGISTICS,
+                            PermissionType.USER,
+                            "신규 발주서 (" + purchaseOrder.getDate() + " -" + purchaseOrder.getId() + ") 가 등록되었습니다.",
+                            NotificationType.NEW_ENTRY));
             return toDetailDto(purchaseOrder);
         } catch (Exception e) {
             log.error("발주서 생성 실패: ", e);

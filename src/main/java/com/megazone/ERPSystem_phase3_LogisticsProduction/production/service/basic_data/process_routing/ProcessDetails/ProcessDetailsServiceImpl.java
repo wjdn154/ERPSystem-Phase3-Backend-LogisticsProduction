@@ -1,12 +1,13 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.basic_data.process_routing.ProcessDetails;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.workcenter.Workcenter;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.workcenter.dto.WorkcenterDTO;
@@ -36,7 +37,7 @@ public class ProcessDetailsServiceImpl implements ProcessDetailsService {
     private final ProcessDetailsRepository processDetailsRepository;
     private final WorkcenterRepository workcenterRepository;
     private final ProductRepository productRepository;
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
 
     @Override
@@ -160,17 +161,17 @@ public class ProcessDetailsServiceImpl implements ProcessDetailsService {
             // 3. 변경된 엔티티를 데이터베이스에 저장
             ProcessDetails updatedProcessDetails = processDetailsRepository.save(existingProcessDetails);
 
-            recentActivityRepository.save(RecentActivity.builder()
-                    .activityDescription(updatedProcessDetails.getName() + "생산공정 정보가 변경")
-                    .activityType(ActivityType.PRODUCTION)
-                    .activityTime(LocalDateTime.now())
-                    .build());
+            integratedService.recentActivitySave(
+                    RecentActivityEntryDTO.create(
+                            updatedProcessDetails.getName() + "생산공정 정보가 변경",
+                            ActivityType.PRODUCTION));
 
-            notificationService.createAndSendNotification(
-                    ModuleType.PRODUCTION,
-                    PermissionType.ALL,
-                    updatedProcessDetails.getName() + "생산공정 정보가 변경되었습니다.",
-                    NotificationType.UPDATE_ROUTING_DETAIL);
+            notificationService.createAndSend(
+                    UserNotificationCreateAndSendDTO.create(
+                            ModuleType.PRODUCTION,
+                            PermissionType.ALL,
+                            updatedProcessDetails.getName() + "생산공정 정보가 변경되었습니다.",
+                            NotificationType.UPDATE_ROUTING_DETAIL));
 
             // 4. 수정된 엔티티를 DTO로 변환하여 반환
             return convertToDTO(updatedProcessDetails);
