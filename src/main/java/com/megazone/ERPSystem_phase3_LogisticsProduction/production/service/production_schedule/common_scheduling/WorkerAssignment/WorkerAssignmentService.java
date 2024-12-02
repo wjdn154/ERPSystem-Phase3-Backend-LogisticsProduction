@@ -25,6 +25,10 @@ public interface WorkerAssignmentService {
 
     List<WorkerAssignmentDTO> getWorkerAssignmentsByWorker(Long workerId, boolean includeShiftType, Long shiftTypeId);
 
+    // 반복되는 공통작업을 처리하는 메서드
+    List<WorkerAssignmentDTO> getWorkerAssignments(
+            LocalDate date, boolean includeShiftType, Long shiftTypeId);
+
     List<WorkerAssignmentDTO> getWorkerAssignmentsByDates(LocalDate startDate, LocalDate endDate, boolean includeShiftType, Long shiftTypeId, String factoryCode, String workcenterCode);
 
 }

@@ -27,20 +27,19 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.ba
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.CurrencyRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.purchase.PurchaseRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 @Slf4j
+@Transactional
 public class PurchaseServiceImpl implements PurchaseService {
 
     private final PurchaseRepository purchaseRepository;
@@ -58,6 +57,7 @@ public class PurchaseServiceImpl implements PurchaseService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public List<PurchaseResponseDto> findAllPurchases(SearchDTO dto) {
 
         List<Purchase> purchases;
@@ -141,6 +141,7 @@ public class PurchaseServiceImpl implements PurchaseService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public Optional<PurchaseResponseDetailDto> findPurchaseDetailById(Long id) {
         return purchaseRepository.findById(id)
                 .map(this::toDetailDto);
@@ -233,7 +234,9 @@ public class PurchaseServiceImpl implements PurchaseService {
 
     /** 구매서 등록 관련 메서드 **/
     // 구매서 등록 DTO -> Entity 변환 메소드
-    private Purchase toEntity(PurchaseCreateDto dto) {
+    @Transactional(readOnly = true)
+    @Override
+    public Purchase toEntity(PurchaseCreateDto dto) {
         Purchase purchase = Purchase.builder()
                 .client(clientRepository.findById(dto.getClientId())
                         .orElseThrow(() -> new RuntimeException("거래처 정보를 찾을 수 없습니다.")))
@@ -255,7 +258,9 @@ public class PurchaseServiceImpl implements PurchaseService {
         return getPurchase(dto, purchase);
     }
 
-    private Purchase getPurchase(PurchaseCreateDto dto, Purchase purchase) {
+    @Override
+    @Transactional(readOnly = true)
+    public Purchase getPurchase(PurchaseCreateDto dto, Purchase purchase) {
         dto.getItems().forEach(item -> {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new RuntimeException("품목 정보를 찾을 수 없습니다."));

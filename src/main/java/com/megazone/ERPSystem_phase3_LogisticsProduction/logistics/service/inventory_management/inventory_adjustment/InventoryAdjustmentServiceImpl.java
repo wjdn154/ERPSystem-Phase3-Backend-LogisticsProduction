@@ -77,12 +77,16 @@ public class InventoryAdjustmentServiceImpl implements InventoryAdjustmentServic
                 .build();
     }
 
-    private Long generateWorkNumber(LocalDate workDate) {
+    @Transactional(readOnly = true)
+    @Override
+    public Long generateWorkNumber(LocalDate workDate) {
         Long maxWorkNumber = inventoryHistoryRepository.findMaxWorkNumberByDate(workDate);
         return (maxWorkNumber == null) ? 1L : maxWorkNumber + 1;
     }
 
-    private Long generateSlipNumber(LocalDate slipDate) {
+    @Transactional(readOnly = true)
+    @Override
+    public Long generateSlipNumber(LocalDate slipDate) {
         Long maxSlipNumber = inventoryHistoryRepository.findMaxSlipNumberByDate(slipDate);
         return (maxSlipNumber == null) ? 1L : maxSlipNumber + 1;
     }

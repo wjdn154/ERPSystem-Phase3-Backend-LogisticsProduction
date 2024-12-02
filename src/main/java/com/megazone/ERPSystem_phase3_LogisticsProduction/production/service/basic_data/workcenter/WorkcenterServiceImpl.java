@@ -25,13 +25,12 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.p
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.production_schedule.common_scheduling.worker_assignment.WorkerAssignmentRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.resource_data.equipment.EquipmentDataRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -89,7 +88,9 @@ public class WorkcenterServiceImpl implements WorkcenterService {
     }
 
     // Entity로 변환하는 메서드
-    private Workcenter convertToEntity(WorkcenterDTO workcenterDTO) {
+    @Override
+    @Transactional(readOnly = true)
+    public Workcenter convertToEntity(WorkcenterDTO workcenterDTO) {
 
 
         List<EquipmentData> equipmentList = Optional.ofNullable(workcenterDTO.getEquipmentIds())
@@ -206,6 +207,7 @@ public class WorkcenterServiceImpl implements WorkcenterService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<WorkcenterDTO> findAll() {
         LocalDate today = LocalDate.now();
         List<Workcenter> workcenters = workcenterRepository.findAllWithDetails();
@@ -251,12 +253,15 @@ public class WorkcenterServiceImpl implements WorkcenterService {
     }
 
 
+    @Override
+    @Transactional(readOnly = true)
     public int getTodayWorkerCount(String workcenterCode, LocalDate currentDate) {
         List<WorkerAssignment> todayAssignments = workerAssignmentRepository.getWorkerAssignments(workcenterCode, Optional.of(currentDate));
         return todayAssignments.size(); // 작업자 수 반환
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<WorkerAssignmentDTO> findTodayWorkers(String workcenterCode) {
         LocalDate today = LocalDate.now();
 
@@ -282,6 +287,7 @@ public class WorkcenterServiceImpl implements WorkcenterService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<WorkcenterDTO> findByCode(String code) {
         return workcenterRepository.findByCode(code).map(workcenter -> {
             WorkcenterDTO workcenterDTO = convertToDTO(workcenter);
@@ -296,6 +302,7 @@ public class WorkcenterServiceImpl implements WorkcenterService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<WarehouseResponseDTO> findAllFactories() {
         return warehouseRepository.findAll().stream()
                 .filter(warehouse -> warehouse.getWarehouseType() == WarehouseType.FACTORY
@@ -316,6 +323,7 @@ public class WorkcenterServiceImpl implements WorkcenterService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<EquipmentDataDTO> findEquipmentByWorkcenterCode(String workcenterCode) {
         Workcenter workcenter = workcenterRepository.findByCode(workcenterCode)
                 .orElseThrow(() -> new EntityNotFoundException("작업장 코드를 찾을 수 없습니다: " + workcenterCode));
@@ -353,6 +361,7 @@ public class WorkcenterServiceImpl implements WorkcenterService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<WorkerAssignmentDTO> findWorkerAssignmentsByWorkcenterCode(String workcenterCode) {
         Workcenter workcenter = workcenterRepository.findByCode(workcenterCode)
                 .orElseThrow(() -> new EntityNotFoundException("작업장 코드를 찾을 수 없습니다: " + workcenterCode));

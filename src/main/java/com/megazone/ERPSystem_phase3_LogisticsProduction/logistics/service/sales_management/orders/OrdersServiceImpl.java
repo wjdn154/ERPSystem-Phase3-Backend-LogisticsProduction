@@ -26,13 +26,12 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.ba
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.CurrencyRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.sales_management.orders.OrdersRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -56,6 +55,7 @@ public class OrdersServiceImpl implements OrdersService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public List<OrdersResponseDto> findAllOrders(SearchDTO dto) {
         List<Orders> orders;
 
@@ -137,6 +137,7 @@ public class OrdersServiceImpl implements OrdersService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public Optional<OrdersResponseDetailDto> findOrdersDetailById(Long id) {
         return ordersRepository.findById(id)
                 .map(this::toDetailDto);
@@ -226,7 +227,9 @@ public class OrdersServiceImpl implements OrdersService {
 
     /** 주문서 등록 관련 메서드 **/
     // 주문서 등록 DTO -> Entity 변환 메소드
-    private Orders toEntity(OrdersCreateDto dto) {
+    @Override
+    @Transactional(readOnly = true)
+    public Orders toEntity(OrdersCreateDto dto) {
 
         Orders orders = Orders.builder()
                 .client(clientRepository.findById(dto.getClientId())
@@ -250,7 +253,9 @@ public class OrdersServiceImpl implements OrdersService {
         return getOrders(dto, orders);
     }
 
-    private Orders getOrders(OrdersCreateDto dto, Orders orders) {
+    @Override
+    @Transactional(readOnly = true)
+    public Orders getOrders(OrdersCreateDto dto, Orders orders) {
         if (orders.getCurrency() == null) {
             throw new RuntimeException("통화 정보가 설정되지 않았습니다.");
         }

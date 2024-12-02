@@ -8,9 +8,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.p
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.production_schedule.planning.mrp.MrpRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.resource_data.materialData.MaterialDataRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -62,6 +62,7 @@ public class MrpServiceImpl implements MrpService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MrpDTO getMrpById(Long id) {
         Mrp mrp = mrpRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("ID가 " + id + "인 MRP를 찾을 수 없습니다."));
@@ -69,6 +70,7 @@ public class MrpServiceImpl implements MrpService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<MrpDTO> getAllMrps() {
         List<Mrp> mrpList = mrpRepository.findAll();
         return mrpList.stream()

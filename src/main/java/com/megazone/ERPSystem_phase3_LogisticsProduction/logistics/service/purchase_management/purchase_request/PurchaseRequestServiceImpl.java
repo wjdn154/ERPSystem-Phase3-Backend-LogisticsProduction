@@ -25,20 +25,19 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.ba
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.CurrencyRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.purchase_request.PurchaseRequestRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 @Slf4j
+@Transactional
 public class PurchaseRequestServiceImpl implements PurchaseRequestService {
 
     private final PurchaseRequestRepository purchaseRequestRepository;
@@ -54,6 +53,7 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public List<PurchaseRequestResponseDto> findAllPurchaseRequests(SearchDTO dto) {
 
         List<PurchaseRequest> purchaseRequests;
@@ -135,6 +135,7 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public Optional<PurchaseRequestResponseDetailDto> findPurchaseRequestDetailById(Long id) {
 
         return purchaseRequestRepository.findById(id)
@@ -225,7 +226,9 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
 
     /** 발주요청 등록 관련 메서드 **/
     // 발주 요청 등록 DTO -> Entity 변환 메소드
-    private PurchaseRequest toEntity(PurchaseRequestCreateDto dto) {
+    @Override
+    @Transactional(readOnly = true)
+    public PurchaseRequest toEntity(PurchaseRequestCreateDto dto) {
 
         PurchaseRequest newRequest = PurchaseRequest.builder()
                 .manager(employeeRepository.findById(dto.getManagerId())
@@ -242,7 +245,9 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
         return getPurchaseRequest(dto, newRequest);
     }
 
-    private PurchaseRequest getPurchaseRequest(PurchaseRequestCreateDto dto, PurchaseRequest newRequest) {
+    @Transactional(readOnly = true)
+    @Override
+    public PurchaseRequest getPurchaseRequest(PurchaseRequestCreateDto dto, PurchaseRequest newRequest) {
         dto.getItems().forEach(item -> {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new RuntimeException("품목 정보를 찾을 수 없습니다."));

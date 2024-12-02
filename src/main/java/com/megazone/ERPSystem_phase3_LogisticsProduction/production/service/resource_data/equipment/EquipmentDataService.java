@@ -1,6 +1,7 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.resource_data.equipment;
 
 
+import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.resource_data.equipment.EquipmentData;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.resource_data.equipment.dto.EquipmentDataDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.resource_data.equipment.dto.EquipmentDataShowDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.resource_data.equipment.dto.EquipmentDataUpdateDTO;
@@ -29,4 +30,6 @@ public interface EquipmentDataService {
     Optional<EquipmentDataShowDTO> findEquipmentDataDetailById(Long id);
 
 
+    //equipmentDataDto를 엔티티로 변환하는 메서드
+    EquipmentData equipmentToEntity(EquipmentDataDTO dto);
 }

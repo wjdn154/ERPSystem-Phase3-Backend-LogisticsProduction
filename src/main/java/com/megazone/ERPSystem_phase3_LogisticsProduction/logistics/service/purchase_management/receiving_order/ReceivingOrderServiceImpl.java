@@ -20,14 +20,12 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchas
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.warehouse_management.warehouse.Warehouse;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.basic_information_management.warehouse.WarehouseRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.CurrencyRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.receiving_order.ReceivingOrderRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -41,7 +39,6 @@ public class ReceivingOrderServiceImpl implements ReceivingOrderService {
     private final ClientRepository clientRepository;
     private final EmployeeRepository employeeRepository;
     private final WarehouseRepository warehouseRepository;
-    private final CurrencyRepository currencyRepository;
     private final ProductRepository productRepository;
     private final IntegratedService integratedService;
     private final NotificationService notificationService;
@@ -51,6 +48,7 @@ public class ReceivingOrderServiceImpl implements ReceivingOrderService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public List<ReceivingOrderResponseDto> findAllReceivingOrders(SearchDTO dto) {
 
         List<ReceivingOrder> receivingOrders;
@@ -118,6 +116,7 @@ public class ReceivingOrderServiceImpl implements ReceivingOrderService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public Optional<ReceivingOrderResponseDetailDto> findReceivingOrderDetailById(Long id) {
 
         return receivingOrderRepository.findById(id)
@@ -194,7 +193,9 @@ public class ReceivingOrderServiceImpl implements ReceivingOrderService {
 
     /** 입고지시서 직접 등록 관련 메서드 **/
     // 입고지시서 등록 DTO -> Entity 변환 메소드
-    private ReceivingOrder toEntity(ReceivingOrderCreateDto dto) {
+    @Override
+    @Transactional(readOnly = true)
+    public ReceivingOrder toEntity(ReceivingOrderCreateDto dto) {
         ReceivingOrder newOrder = ReceivingOrder.builder()
                 .client(clientRepository.findById(dto.getClientId())
                         .orElseThrow(() -> new RuntimeException("거래처 정보를 찾을 수 없습니다.")))
@@ -210,7 +211,9 @@ public class ReceivingOrderServiceImpl implements ReceivingOrderService {
         return getReceivingOrder(dto, newOrder);
     }
 
-    private ReceivingOrder getReceivingOrder(ReceivingOrderCreateDto dto, ReceivingOrder newOrder) {
+    @Override
+    @Transactional(readOnly = true)
+    public ReceivingOrder getReceivingOrder(ReceivingOrderCreateDto dto, ReceivingOrder newOrder) {
         dto.getItems().forEach(item -> {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new RuntimeException("품목 정보를 찾을 수 없습니다."));

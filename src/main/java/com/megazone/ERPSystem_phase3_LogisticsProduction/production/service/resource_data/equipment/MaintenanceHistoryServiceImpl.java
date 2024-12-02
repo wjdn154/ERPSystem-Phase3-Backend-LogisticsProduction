@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -38,6 +37,7 @@ public class MaintenanceHistoryServiceImpl implements MaintenanceHistoryService 
     private final NotificationService notificationService;
     //유지보수 이력 리스트 조회
     @Override
+    @Transactional(readOnly = true)
     public List<ListMaintenanceHistoryDTO> findAllMaintenanceHistory() {
 
         return maintenanceHistoryRepository.findAllByOrderByMaintenanceDateDesc().stream()
@@ -57,6 +57,7 @@ public class MaintenanceHistoryServiceImpl implements MaintenanceHistoryService 
 
     //유지보수 이력 상세 조회
     @Override
+    @Transactional(readOnly = true)
     public Optional<MaintenanceHistoryDetailShowDTO> findMaintenanceHistoryById(Long id) {
 
         //해당 아이디에 해당하는 유지보수 이력 엔티티 조회
@@ -177,7 +178,9 @@ public class MaintenanceHistoryServiceImpl implements MaintenanceHistoryService 
     }
 
     //maintenanceHistoryDetailDTO를 maintenanceHistory 엔티티로 변환
-    private MaintenanceHistory maintenanceHistoryToEntity(MaintenanceHistoryDetailDTO dto) {
+    @Override
+    @Transactional(readOnly = true)
+    public MaintenanceHistory maintenanceHistoryToEntity(MaintenanceHistoryDetailDTO dto) {
         MaintenanceHistory maintenanceHistory = new MaintenanceHistory();
 
         maintenanceHistory.setMaintenanceManager(dto.getMaintenanceManager());

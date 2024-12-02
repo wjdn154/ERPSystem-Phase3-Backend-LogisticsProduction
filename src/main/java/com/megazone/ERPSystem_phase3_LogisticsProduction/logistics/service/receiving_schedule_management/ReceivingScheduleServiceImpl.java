@@ -20,9 +20,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.in
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.receiving_order.ReceivingOrderDetailRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.receiving_processing_management.ReceivingScheduleRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.warehouse_location_management.WarehouseLocationRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -43,6 +43,7 @@ public class ReceivingScheduleServiceImpl implements ReceivingScheduleService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public List<ReceivingScheduleResponseDTO> getReceivingSchedulesByDateRange(LocalDate startDate, LocalDate endDate) {
 // 날짜 범위와 상태가 WAITING인 모든 ReceivingSchedule 엔티티 조회
         List<ReceivingSchedule> schedules = receivingScheduleRepository.findAllByReceivingDateBetweenAndStatus(startDate, endDate, ReceivingStatus.WAITING);

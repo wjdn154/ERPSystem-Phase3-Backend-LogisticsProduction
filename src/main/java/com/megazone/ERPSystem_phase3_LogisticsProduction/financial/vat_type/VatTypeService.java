@@ -1,15 +1,10 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.common.config.multi_tenant.TenantContext;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.KafkaProducerHelper;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.common.config.KafkaProducerHelper;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.VatAmountWithSupplyAmountDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.VatTypeShowDTO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -26,8 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class VatTypeService {
 
     private final RestClient financialServiceClient;
-    private final ConcurrentHashMap<String, CompletableFuture<VatTypeShowDTO>> responseFutures;
-    private final ConcurrentHashMap<String, CompletableFuture<List<VatTypeShowDTO>>> listResponseFutures;
+    private final ConcurrentHashMap<String, CompletableFuture<VatTypeShowDTO>> getTypeResponseFutures;
+    private final ConcurrentHashMap<String, CompletableFuture<List<VatTypeShowDTO>>> vatTypeListResponseFutures;
     private final KafkaProducerHelper kafkaProducerHelper;
 
 
@@ -35,7 +30,7 @@ public class VatTypeService {
         String currentTenant = TenantContext.getCurrentTenant();
         String requestId = UUID.randomUUID().toString();
         CompletableFuture<VatTypeShowDTO> future = new CompletableFuture<>();
-        responseFutures.put(requestId, future);
+        getTypeResponseFutures.put(requestId, future);
 
         kafkaProducerHelper.sendMessage("vat-type-request-topic", requestId, Map.of(
                 "vatTypeId", vatTypeId,
@@ -46,7 +41,7 @@ public class VatTypeService {
         try {
             return future.join();
         } catch (Exception e) {
-            responseFutures.remove(requestId);
+            getTypeResponseFutures.remove(requestId);
             throw new RuntimeException("부가세 유형 서비스 호출 실패");
         }
     }
@@ -55,18 +50,17 @@ public class VatTypeService {
         String currentTenant = TenantContext.getCurrentTenant();
         String requestId = UUID.randomUUID().toString();
         CompletableFuture<List<VatTypeShowDTO>> future = new CompletableFuture<>();
-        listResponseFutures.put(requestId, future);
+        vatTypeListResponseFutures.put(requestId, future);
 
         kafkaProducerHelper.sendMessage("vat-type-list-request-topic", requestId, Map.of(
                 "vatTypeIdList", vatTypeIdList,
                 "currentTenant", currentTenant,
-                "requestId", requestId
-        ));
+                "requestId", requestId));
 
         try {
             return future.join();
         } catch (Exception e) {
-            listResponseFutures.remove(requestId);
+            vatTypeListResponseFutures.remove(requestId);
             throw new RuntimeException("부가세 유형 리스트 서비스 호출 실패", e);
         }
     }

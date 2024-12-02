@@ -1,5 +1,8 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.basic_data.bom.StandardBom;
 
+import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.bom.StandardBom;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.bom.StandardBomMaterial;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.bom.dto.BomMaterialDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.bom.dto.StandardBomDTO;
 import jakarta.validation.Valid;
 
@@ -23,4 +26,8 @@ public interface StandardBomService {
 //    List<StandardBomDTO> getParentBoms(Long childProductId);
 
     StandardBomDTO getParentBom(Long childProductId);
+
+    StandardBom convertToEntity(StandardBomDTO standardBomDTO);
+
+    StandardBomMaterial convertToEntity(BomMaterialDTO materialDTO);
 }

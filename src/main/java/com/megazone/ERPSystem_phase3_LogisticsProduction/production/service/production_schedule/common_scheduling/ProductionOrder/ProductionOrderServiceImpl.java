@@ -37,9 +37,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.r
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.resource_data.worker.WorkerRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.work_performance.work_report.WorkPerformanceRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -96,6 +96,7 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
      * 작업 지시 조회 by ID
      */
     @Override
+    @Transactional(readOnly = true)
     public ProductionOrderDTO getProductionOrderById(Long productionOrderId) {
         ProductionOrder productionOrder = productionOrderRepository.findById(productionOrderId)
                 .orElseThrow(() -> new EntityNotFoundException("작업지시를 찾을 수 없습니다."));
@@ -106,6 +107,7 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
      * 모든 작업 지시 조회
      */
     @Override
+    @Transactional(readOnly = true)
     public List<ProductionOrderDTO> getAllProductionOrders() {
         List<ProductionOrder> productionOrders = productionOrderRepository.findAll();
         return productionOrders.stream()
@@ -114,6 +116,7 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductionOrderDTO> getUnconfirmedProductionOrders() {
         List<ProductionOrder> productionOrders = productionOrderRepository.findByConfirmedFalse();
         return productionOrders.stream()
@@ -209,7 +212,9 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
     /**
      * 작업자 배정 엔티티 생성
      */
-    private WorkerAssignment assignWorkerToShift(Long workerId, String workcenterCode, Long shiftTypeId, LocalDate assignmentDate, ProductionOrder productionOrder) {
+    @Override
+    @Transactional(readOnly = true)
+    public WorkerAssignment assignWorkerToShift(Long workerId, String workcenterCode, Long shiftTypeId, LocalDate assignmentDate, ProductionOrder productionOrder) {
         Worker worker = workerRepository.findById(workerId)
                 .orElseThrow(() -> new EntityNotFoundException("작업자를 찾을 수 없습니다."));
         Workcenter workcenter = workcenterRepository.findByCode(workcenterCode)
@@ -406,6 +411,8 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
 
 
     // 폐기물 발생량 계산 함수
+    @Override
+    @Transactional(readOnly = true)
     public BigDecimal calculateWaste(ProductionOrder productionOrder, BigDecimal workQuantity) {
         StandardBom bom = standardBomRepository.findByProductId(productionOrder.getMps().getProduct().getId()).get(0);
 
@@ -423,6 +430,8 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
     }
 
     // 실제 에너지 사용량 계산 함수
+    @Override
+    @Transactional(readOnly = true)
     public BigDecimal calculateActualEnergy(ProductionOrder productionOrder, BigDecimal workHours) {
 
         // 장비별 에너지 소비량 계산 후 합산
@@ -437,6 +446,8 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
     }
 
     // 산업 평균 에너지 사용량 계산 함수
+    @Override
+    @Transactional(readOnly = true)
     public BigDecimal calculateAverageEnergy(ProductionOrder productionOrder, BigDecimal workQuantity) {
         StandardBom bom = standardBomRepository.findByProductId(productionOrder.getMps().getProduct().getId()).get(0);
         return standardBomMaterialRepository.findByBomId(bom.getId()).stream()
@@ -472,7 +483,9 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
     }
 
     // DTO를 엔티티로 변환
-    private ProductionOrder convertToEntity(ProductionOrderDTO productionOrderDTO) {
+    @Override
+    @Transactional(readOnly = true)
+    public ProductionOrder convertToEntity(ProductionOrderDTO productionOrderDTO) {
         Mps mps = mpsRepository.findById(productionOrderDTO.getMpsId()).orElseThrow(() -> new EntityNotFoundException("MPS를 찾을 수 없습니다."));
         ProcessDetails processDetails = processDetailsRepository.findById(productionOrderDTO.getProcessDetailsId()).orElseThrow(() -> new EntityNotFoundException("공정 세부를 찾을 수 없습니다."));
         Workcenter workcenter = workcenterRepository.findByProcessDetailsId(processDetails.getId())

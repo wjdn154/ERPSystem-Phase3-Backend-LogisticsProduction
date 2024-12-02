@@ -7,9 +7,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.warehou
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.basic_information_management.warehouse.WarehouseRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.inventory_management.inventory.InventoryRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.warehouse_location_management.WarehouseLocationRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,6 +24,7 @@ public class WarehouseLocationServiceImpl implements WarehouseLocationService {
     private final InventoryRepository inventoryRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<WarehouseLocationResponseDTO> getLocationsByWarehouseId(Long warehouseId) {
         List<WarehouseLocation> locations = warehouseLocationRepository.findByWarehouseId(warehouseId);
 

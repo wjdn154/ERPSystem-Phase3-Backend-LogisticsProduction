@@ -12,21 +12,17 @@ import org.springframework.web.client.RestClient;
 @RequiredArgsConstructor
 public class IntegratedService {
 
-    private final RestClient integratedServiceClient;
-    private final String baseUrl = "http://localhost:8082/api/integrated/";
+    private final RestClient commonServiceClient;
 
     public void recentActivitySave(RecentActivityEntryDTO requestData) {
         String token = (String) SecurityContextHolder.getContext().getAuthentication().getCredentials();
-        System.out.println("대시보드 api 호출 토큰 : " + token);
-
         try {
-            String responseMessage =  integratedServiceClient.post()
+            String responseMessage =  commonServiceClient.post()
                     .uri("recentActivity/save")
                     .header("Authorization", "Bearer " + token)
                     .body(requestData)
                     .retrieve()
                     .body(String.class);
-            System.out.println("최종 요청 URL: " + baseUrl + "recentActivity/save");
             if(responseMessage == null) {
                 throw new RuntimeException("대시보드 서비스 null");
             }
@@ -38,16 +34,13 @@ public class IntegratedService {
 
     public void environmentalCertification(EnvironmentalCertificationSaveDTO requestData) {
         String token = (String) SecurityContextHolder.getContext().getAuthentication().getCredentials();
-        System.out.println("대시보드 api 호출 토큰 : " + token);
-
         try {
-            String responseMessage =  integratedServiceClient.post()
+            String responseMessage =  commonServiceClient.post()
                     .uri("/environmental")
                     .header("Authorization", "Bearer " + token)
                     .body(requestData)
                     .retrieve()
                     .body(String.class);
-            System.out.println("최종 요청 URL: " + baseUrl + "environmental");
             if(responseMessage == null) {
                 throw new RuntimeException("대시보드 환경점수 null");
             }

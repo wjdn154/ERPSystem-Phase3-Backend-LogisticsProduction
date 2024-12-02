@@ -22,9 +22,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.pr
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.sales_management.shipping_order.ShippingOrderRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.sales_management.shipping_order_details.ShippingOrderDetailRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.shipping_processing_management.ShippingProcessingRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -121,6 +121,7 @@ public class ShippingProcessingServiceImpl implements ShippingProcessingService 
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ShippingProcessingResponseDTO> getShippingProcessingList(LocalDate startDate, LocalDate endDate) {
         return shippingProcessingRepository.findShippingProcessingByDateRangeAndStatus(startDate, endDate)
                 .stream()
