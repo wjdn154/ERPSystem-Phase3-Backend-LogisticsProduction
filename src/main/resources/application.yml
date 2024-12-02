@@ -78,7 +78,6 @@ spring:
         - classpath:initial-database/production/production_schedule/common_scheduling/worker_assignment.sql
         - classpath:initial-database/logistics/purchase_management/purchase.sql
 
-
   kafka:
     bootstrap-servers: kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092
 #    bootstrap-servers: localhost:9092
@@ -94,6 +93,7 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      
 logging:
   level:
 #    root: DEBUG

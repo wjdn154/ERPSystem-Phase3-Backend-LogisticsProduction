@@ -7,6 +7,7 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
@@ -43,6 +44,27 @@ public class VatTypeService {
         } catch (Exception e) {
             getTypeResponseFutures.remove(requestId);
             throw new RuntimeException("부가세 유형 서비스 호출 실패");
+        }
+    }
+
+    @KafkaListener(topics = "vat-type-response-topic", groupId = "vat-type-service-group")
+    public void handleVatTypeResponse(Map<String, Object> response) {
+        String requestId = (String) response.get("requestId");
+
+        try {
+            VatTypeShowDTO vatTypeShowDTO = objectMapper.convertValue(response.get("data"), VatTypeShowDTO.class);
+
+            // 요청 ID에 매칭되는 Future를 완료 상태로 변경
+            CompletableFuture<VatTypeShowDTO> future = responseFutures.remove(requestId);
+            if (future != null) {
+                future.complete(vatTypeShowDTO);
+            }
+        } catch (Exception e) {
+            System.err.println("응답 데이터 변환 실패: " + e.getMessage());
+            CompletableFuture<VatTypeShowDTO> future = responseFutures.remove(requestId);
+            if (future != null) {
+                future.completeExceptionally(e);
+            }
         }
     }
 

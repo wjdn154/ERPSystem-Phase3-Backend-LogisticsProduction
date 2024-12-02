@@ -28,8 +28,6 @@ public class OrdersController {
      */
     @PostMapping("/")
     public ResponseEntity<?> getOrders(@RequestBody(required = false) SearchDTO dto, HttpServletRequest request) {
-        String test = request.getHeader("Authorization");
-        System.out.println(test);
         List<OrdersResponseDto> response = ordersService.findAllOrders(dto);
 
         if(response.isEmpty()) {
