@@ -1,5 +1,6 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.resource_data.equipment;
 
+import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.resource_data.equipment.MaintenanceHistory;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.resource_data.equipment.dto.ListMaintenanceHistoryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.resource_data.equipment.dto.MaintenanceHistoryDetailDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.resource_data.equipment.dto.MaintenanceHistoryDetailShowDTO;
@@ -23,4 +24,7 @@ public interface MaintenanceHistoryService {
 
     //유지보수 이력 상세 수정
     Optional<MaintenanceHistoryDetailShowDTO> updateMaintenanceHistory(Long id, MaintenanceHistoryDetailShowDTO dto);
+
+    //maintenanceHistoryDetailDTO를 maintenanceHistory 엔티티로 변환
+    MaintenanceHistory maintenanceHistoryToEntity(MaintenanceHistoryDetailDTO dto);
 }

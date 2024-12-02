@@ -1,16 +1,16 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.resource_data.worker;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.enums.EmploymentStatus;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.enums.EmploymentType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.repository.basic_information_management.Employee.EmployeeRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.EmployeeService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.EmployeeServiceImpl;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.dto.EmployeeAttendanceDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.dto.EmployeeOneDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.common_scheduling.WorkerAssignment;
@@ -23,7 +23,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,9 +35,9 @@ public class WorkerServiceImpl implements WorkerService {
     private final WorkerRepository workerRepository;
     private final EmployeeRepository employeeRepository;
     private final WorkerAssignmentRepository workerAssignmentRepository;
-    private final RecentActivityRepository recentActivityRepository;
-    private final NotificationService notificationService;
     private final EmployeeService employeeService;
+    private final IntegratedService integratedService;
+    private final NotificationService notificationService;
 
     //작업자 상세 정보 수정(교육 이수 여부만 등록 가능)
     @Override
@@ -58,18 +57,18 @@ public class WorkerServiceImpl implements WorkerService {
 
         Worker updateWorker = workerRepository.save(worker);
 
-        recentActivityRepository.save(RecentActivity.builder()
-                .activityDescription("작업자 교육이수여부 1건 변경")
-                .activityType(ActivityType.PRODUCTION)
-                .activityTime(LocalDateTime.now())
-                .build());
+        integratedService.recentActivitySave(
+                RecentActivityEntryDTO.create(
+                        "작업자 교육이수여부 1건 변경",
+                        ActivityType.PRODUCTION));
 
+        notificationService.createAndSend(
+                UserNotificationCreateAndSendDTO.create(
+                        ModuleType.PRODUCTION,
+                        PermissionType.ALL,
+                        "작업자 교육이수여부 1건이 변경되었습니다.",
+                        NotificationType.UPDATE_WORKER));
 
-        notificationService.createAndSendNotification(
-                ModuleType.PRODUCTION,
-                PermissionType.ALL,
-                "작업자 교육이수여부 1건이 변경되었습니다.",
-                NotificationType.UPDATE_WORKER);
 
         WorkerDetailShowDTO workerDetailUpdateDTO = workerToDTO(updateWorker);
 

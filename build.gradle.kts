@@ -91,7 +91,7 @@ dependencies {
 
 	// MySQL JDBC 드라이버
 	runtimeOnly("mysql:mysql-connector-java:8.0.30") // MySQL 드라이버
-//	runtimeOnly ("mysql:mysql-connector-java")
+	implementation("org.springframework.kafka:spring-kafka") // Kafka
 }
 
 // 소스 세트 설정: 생성된 QClass 파일을 메인 소스 디렉토리에 포함

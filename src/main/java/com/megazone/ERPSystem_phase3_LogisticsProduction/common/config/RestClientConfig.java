@@ -26,4 +26,18 @@ public class RestClientConfig {
                 .baseUrl(secretManagerConfig.getHumanResourceServiceUrl())
                 .build();
     }
+
+    @Bean
+    public RestClient notificationServiceClient() {
+        return RestClient.builder()
+                .baseUrl(secretManagerConfig.getNotificationServiceUrl())
+                .build();
+    }
+
+    @Bean
+    public RestClient commonServiceClient() {
+        return RestClient.builder()
+                .baseUrl(secretManagerConfig.getCommonServiceUrl())
+                .build();
+    }
 }

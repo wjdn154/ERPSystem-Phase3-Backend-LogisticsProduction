@@ -1,12 +1,13 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.service.purchase_management.receiving_order;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.model.basic_information_management.client.Client;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.client.ClientRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.Employee;
@@ -19,14 +20,12 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchas
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.warehouse_management.warehouse.Warehouse;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.basic_information_management.warehouse.WarehouseRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.CurrencyRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.receiving_order.ReceivingOrderRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -40,9 +39,8 @@ public class ReceivingOrderServiceImpl implements ReceivingOrderService {
     private final ClientRepository clientRepository;
     private final EmployeeRepository employeeRepository;
     private final WarehouseRepository warehouseRepository;
-    private final CurrencyRepository currencyRepository;
     private final ProductRepository productRepository;
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
 
     /**
@@ -50,6 +48,7 @@ public class ReceivingOrderServiceImpl implements ReceivingOrderService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public List<ReceivingOrderResponseDto> findAllReceivingOrders(SearchDTO dto) {
 
         List<ReceivingOrder> receivingOrders;
@@ -117,6 +116,7 @@ public class ReceivingOrderServiceImpl implements ReceivingOrderService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public Optional<ReceivingOrderResponseDetailDto> findReceivingOrderDetailById(Long id) {
 
         return receivingOrderRepository.findById(id)
@@ -174,17 +174,16 @@ public class ReceivingOrderServiceImpl implements ReceivingOrderService {
             ReceivingOrder receivingOrder = toEntity(createDto);
             receivingOrder = receivingOrderRepository.save(receivingOrder);
 
-            recentActivityRepository.save(RecentActivity.builder()
-                    .activityDescription("신규 입고지시서 등록 : " + receivingOrder.getDate() + " -" + receivingOrder.getId())
-                    .activityType(ActivityType.LOGISTICS)
-                    .activityTime(LocalDateTime.now())
-                    .build());
-            notificationService.createAndSendNotification(
-                    ModuleType.LOGISTICS,
-                    PermissionType.USER,
-                    "신규 입고지시서 (" + receivingOrder.getDate() + " -" + receivingOrder.getId() + ") 가 등록되었습니다.",
-                    NotificationType.NEW_ENTRY
-            );
+            integratedService.recentActivitySave(
+                    RecentActivityEntryDTO.create(
+                            "신규 입고지시서 등록 : " + receivingOrder.getDate() + " -" + receivingOrder.getId(),
+                            ActivityType.LOGISTICS));
+            notificationService.createAndSend(
+                    UserNotificationCreateAndSendDTO.create(
+                            ModuleType.LOGISTICS,
+                            PermissionType.USER,
+                            "신규 입고지시서 (" + receivingOrder.getDate() + " -" + receivingOrder.getId() + ") 가 등록되었습니다.",
+                            NotificationType.NEW_ENTRY));
             return toDetailDto(receivingOrder);
         } catch (Exception e) {
             log.error("입고지시서 생성 실패: ", e);
@@ -194,7 +193,9 @@ public class ReceivingOrderServiceImpl implements ReceivingOrderService {
 
     /** 입고지시서 직접 등록 관련 메서드 **/
     // 입고지시서 등록 DTO -> Entity 변환 메소드
-    private ReceivingOrder toEntity(ReceivingOrderCreateDto dto) {
+    @Override
+    @Transactional(readOnly = true)
+    public ReceivingOrder toEntity(ReceivingOrderCreateDto dto) {
         ReceivingOrder newOrder = ReceivingOrder.builder()
                 .client(clientRepository.findById(dto.getClientId())
                         .orElseThrow(() -> new RuntimeException("거래처 정보를 찾을 수 없습니다.")))
@@ -210,7 +211,9 @@ public class ReceivingOrderServiceImpl implements ReceivingOrderService {
         return getReceivingOrder(dto, newOrder);
     }
 
-    private ReceivingOrder getReceivingOrder(ReceivingOrderCreateDto dto, ReceivingOrder newOrder) {
+    @Override
+    @Transactional(readOnly = true)
+    public ReceivingOrder getReceivingOrder(ReceivingOrderCreateDto dto, ReceivingOrder newOrder) {
         dto.getItems().forEach(item -> {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new RuntimeException("품목 정보를 찾을 수 없습니다."));

@@ -1,12 +1,13 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.basic_data.process_routing.ProcessDetails;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.workcenter.Workcenter;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.workcenter.dto.WorkcenterDTO;
@@ -18,10 +19,10 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.basic_data.Workcenter.WorkcenterRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.basic_data.process_routing.ProcessDetails.ProcessDetailsRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -36,10 +37,11 @@ public class ProcessDetailsServiceImpl implements ProcessDetailsService {
     private final ProcessDetailsRepository processDetailsRepository;
     private final WorkcenterRepository workcenterRepository;
     private final ProductRepository productRepository;
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProcessDetailsDTO> getAllProcessDetails() {
         List<ProcessDetails> processDetailsList = processDetailsRepository.findAll();
 
@@ -51,6 +53,7 @@ public class ProcessDetailsServiceImpl implements ProcessDetailsService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProcessDetailsDTO> findByNameContaining(String name) {
         List<ProcessDetails> processes = processDetailsRepository.findByNameContaining(name);
         return processes.stream()
@@ -58,6 +61,7 @@ public class ProcessDetailsServiceImpl implements ProcessDetailsService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<ProcessDetailsDTO> getProcessDetailsByCode(String code) {
         ProcessDetails processDetails = processDetailsRepository.findByCode(code)
                 .orElseThrow(() -> new EntityNotFoundException("해당 생산공정 " + code + "을 찾을 수 없습니다."));
@@ -160,17 +164,17 @@ public class ProcessDetailsServiceImpl implements ProcessDetailsService {
             // 3. 변경된 엔티티를 데이터베이스에 저장
             ProcessDetails updatedProcessDetails = processDetailsRepository.save(existingProcessDetails);
 
-            recentActivityRepository.save(RecentActivity.builder()
-                    .activityDescription(updatedProcessDetails.getName() + "생산공정 정보가 변경")
-                    .activityType(ActivityType.PRODUCTION)
-                    .activityTime(LocalDateTime.now())
-                    .build());
+            integratedService.recentActivitySave(
+                    RecentActivityEntryDTO.create(
+                            updatedProcessDetails.getName() + "생산공정 정보가 변경",
+                            ActivityType.PRODUCTION));
 
-            notificationService.createAndSendNotification(
-                    ModuleType.PRODUCTION,
-                    PermissionType.ALL,
-                    updatedProcessDetails.getName() + "생산공정 정보가 변경되었습니다.",
-                    NotificationType.UPDATE_ROUTING_DETAIL);
+            notificationService.createAndSend(
+                    UserNotificationCreateAndSendDTO.create(
+                            ModuleType.PRODUCTION,
+                            PermissionType.ALL,
+                            updatedProcessDetails.getName() + "생산공정 정보가 변경되었습니다.",
+                            NotificationType.UPDATE_ROUTING_DETAIL));
 
             // 4. 수정된 엔티티를 DTO로 변환하여 반환
             return convertToDTO(updatedProcessDetails);

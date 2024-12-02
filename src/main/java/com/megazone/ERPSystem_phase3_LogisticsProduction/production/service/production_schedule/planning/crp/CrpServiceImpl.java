@@ -8,9 +8,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.b
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.production_schedule.planning.crp.CrpRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.production_schedule.planning.mps.MpsRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,6 +61,7 @@ public class CrpServiceImpl implements CrpService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CrpDTO getCrpById(Long id) {
         Crp crp = crpRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("ID가 " + id + "인 CRP를 찾을 수 없습니다."));
@@ -68,6 +69,7 @@ public class CrpServiceImpl implements CrpService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CrpDTO> getAllCrps() {
         List<Crp> crpList = crpRepository.findAll();
         return crpList.stream()

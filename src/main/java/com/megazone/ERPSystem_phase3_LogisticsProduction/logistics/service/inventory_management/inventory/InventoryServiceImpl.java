@@ -32,11 +32,13 @@ public class InventoryServiceImpl implements InventoryService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public List<InventoryResponseDTO> getAllInventories() {
         return inventoryRepository.findAllInventories();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<InventoryResponseDTO> getInventoriesByLocationId(Long locationId) {
         List<InventoryResponseDTO> response = inventoryRepository.findInventoriesByLocationId(locationId);
         return null;
@@ -72,11 +74,13 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<InventoryResponseDTO> getInventoriesByWarehouseId(Long warehouseId) {
         return inventoryRepository.findInventoriesByWarehouseId(warehouseId);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Long generateNextInventoryNumber() {
         Long maxInventoryNumber = inventoryRepository.findMaxInventoryNumber();
         Long maxPendingInventoryNumber = receivingScheduleRepository.findMaxPendingInventoryNumber();
@@ -86,6 +90,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<InventoryResponseDTO> getInventoryByLocation(Long locationId) {
         List<Inventory> inventories = inventoryRepository.findByWarehouseLocationId(locationId);
         return inventories.stream()
@@ -94,6 +99,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public BigDecimal allInventoryCount() {
         List<Inventory> inventoryList = inventoryRepository.findAll();
         BigDecimal totalInventoryCount = BigDecimal.ZERO;

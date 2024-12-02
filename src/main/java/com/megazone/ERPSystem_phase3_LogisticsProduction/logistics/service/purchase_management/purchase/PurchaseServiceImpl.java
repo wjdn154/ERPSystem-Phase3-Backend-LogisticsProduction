@@ -1,12 +1,13 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.service.purchase_management.purchase;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.model.basic_information_management.voucher_entry.sales_and_purchase_voucher_entry.enums.ElectronicTaxInvoiceStatus;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.client.ClientRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.VatTypeService;
@@ -21,26 +22,24 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchas
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.dto.PurchaseResponseDetailDto.PurchaseItemDetailDto;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.dto.PurchaseResponseDto;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.dto.SearchDTO;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.sales_management.Orders;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.warehouse_management.warehouse.Warehouse;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.basic_information_management.warehouse.WarehouseRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.CurrencyRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.purchase.PurchaseRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 @Slf4j
+@Transactional
 public class PurchaseServiceImpl implements PurchaseService {
 
     private final PurchaseRepository purchaseRepository;
@@ -49,15 +48,16 @@ public class PurchaseServiceImpl implements PurchaseService {
     private final WarehouseRepository warehouseRepository;
     private final CurrencyRepository currencyRepository;
     private final ProductRepository productRepository;
-    private final RecentActivityRepository recentActivityRepository;
-    private final NotificationService notificationService;
     private final VatTypeService vatTypeService;
+    private final NotificationService notificationService;
+    private final IntegratedService integratedService;
 
     /**
      * 구매서 목록 조회
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public List<PurchaseResponseDto> findAllPurchases(SearchDTO dto) {
 
         List<Purchase> purchases;
@@ -141,6 +141,7 @@ public class PurchaseServiceImpl implements PurchaseService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public Optional<PurchaseResponseDetailDto> findPurchaseDetailById(Long id) {
         return purchaseRepository.findById(id)
                 .map(this::toDetailDto);
@@ -212,17 +213,16 @@ public class PurchaseServiceImpl implements PurchaseService {
             Purchase purchase = toEntity(createDto);
             purchase = purchaseRepository.save(purchase);
 
-            recentActivityRepository.save(RecentActivity.builder()
-                    .activityDescription("신규 구매 등록 : " + purchase.getDate() + " -" + purchase.getId())
-                    .activityType(ActivityType.LOGISTICS)
-                    .activityTime(LocalDateTime.now())
-                    .build());
-            notificationService.createAndSendNotification(
-                    ModuleType.LOGISTICS,
-                    PermissionType.USER,
-                    "신규 구매 (" + purchase.getDate() + " -" + purchase.getId() + ") 가 등록되었습니다.",
-                    NotificationType.NEW_ENTRY
-            );
+            integratedService.recentActivitySave(
+                    RecentActivityEntryDTO.create(
+                            "신규 구매 등록 : " + purchase.getDate() + " -" + purchase.getId(),
+                            ActivityType.LOGISTICS));
+            notificationService.createAndSend(
+                    UserNotificationCreateAndSendDTO.create(
+                            ModuleType.LOGISTICS,
+                            PermissionType.USER,
+                            "신규 구매 (" + purchase.getDate() + " -" + purchase.getId() + ") 가 등록되었습니다.",
+                            NotificationType.NEW_ENTRY));
 
             return toDetailDto(purchase);
         } catch (Exception e) {
@@ -234,7 +234,9 @@ public class PurchaseServiceImpl implements PurchaseService {
 
     /** 구매서 등록 관련 메서드 **/
     // 구매서 등록 DTO -> Entity 변환 메소드
-    private Purchase toEntity(PurchaseCreateDto dto) {
+    @Transactional(readOnly = true)
+    @Override
+    public Purchase toEntity(PurchaseCreateDto dto) {
         Purchase purchase = Purchase.builder()
                 .client(clientRepository.findById(dto.getClientId())
                         .orElseThrow(() -> new RuntimeException("거래처 정보를 찾을 수 없습니다.")))
@@ -256,7 +258,9 @@ public class PurchaseServiceImpl implements PurchaseService {
         return getPurchase(dto, purchase);
     }
 
-    private Purchase getPurchase(PurchaseCreateDto dto, Purchase purchase) {
+    @Override
+    @Transactional(readOnly = true)
+    public Purchase getPurchase(PurchaseCreateDto dto, Purchase purchase) {
         dto.getItems().forEach(item -> {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new RuntimeException("품목 정보를 찾을 수 없습니다."));

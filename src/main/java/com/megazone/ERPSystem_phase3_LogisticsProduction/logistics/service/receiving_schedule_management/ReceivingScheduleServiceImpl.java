@@ -1,12 +1,13 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.service.receiving_schedule_management;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.inventory_management.inventory.Inventory;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.ReceivingOrderDetail;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.receiving_processing_management.ReceivingSchedule;
@@ -19,9 +20,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.in
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.receiving_order.ReceivingOrderDetailRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.receiving_processing_management.ReceivingScheduleRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.warehouse_location_management.WarehouseLocationRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -37,11 +38,12 @@ public class ReceivingScheduleServiceImpl implements ReceivingScheduleService {
     private final WarehouseLocationRepository warehouseLocationRepository;
     private final ReceivingScheduleRepository receivingScheduleRepository;
     private final InventoryRepository inventoryRepository;
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
 
 
     @Override
+    @Transactional(readOnly = true)
     public List<ReceivingScheduleResponseDTO> getReceivingSchedulesByDateRange(LocalDate startDate, LocalDate endDate) {
 // 날짜 범위와 상태가 WAITING인 모든 ReceivingSchedule 엔티티 조회
         List<ReceivingSchedule> schedules = receivingScheduleRepository.findAllByReceivingDateBetweenAndStatus(startDate, endDate, ReceivingStatus.WAITING);
@@ -113,18 +115,16 @@ public class ReceivingScheduleServiceImpl implements ReceivingScheduleService {
             receivingScheduleRepository.save(receivingSchedule);
 
             // 알림 생성
-            recentActivityRepository.save(RecentActivity.builder()
-                    .activityDescription("새로운 입고 예정 스케줄이 등록되었습니다.")
-                    .activityType(ActivityType.LOGISTICS)
-                    .activityTime(LocalDateTime.now())
-                    .build());
-
-            notificationService.createAndSendNotification(
-                    ModuleType.LOGISTICS,
-                    PermissionType.ADMIN,
-                    "새로운 입고 스케줄이 등록되었습니다.",
-                    NotificationType.RECEIVING_COMPLETE
-            );
+            integratedService.recentActivitySave(
+                    RecentActivityEntryDTO.create(
+                            "새로운 입고 예정 스케줄이 등록되었습니다.",
+                            ActivityType.LOGISTICS));
+            notificationService.createAndSend(
+                    UserNotificationCreateAndSendDTO.create(
+                            ModuleType.LOGISTICS,
+                            PermissionType.ADMIN,
+                            "새로운 입고 스케줄이 등록되었습니다.",
+                            NotificationType.RECEIVING_COMPLETE));
         }
     }
 

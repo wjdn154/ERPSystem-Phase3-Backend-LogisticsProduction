@@ -38,6 +38,7 @@ public class ShipmentServiceImpl implements ShipmentService{
 
 
     @Override
+    @Transactional(readOnly = true)
     public List<ShipmentResponseListDTO> findShipmentListByDateRange(LocalDate startDate, LocalDate endDate) {
         List<Shipment> shipments = shipmentRepository.findShipmentListByDateRange(startDate, endDate);
 
@@ -64,6 +65,7 @@ public class ShipmentServiceImpl implements ShipmentService{
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ShipmentResponseDTO getShipmentById(Long id) {
         return shipmentRepository.findById(id)
                 .map(ShipmentResponseDTO::mapToDto)
@@ -186,6 +188,7 @@ public class ShipmentServiceImpl implements ShipmentService{
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ShipmentTotalProductsDTO findShipmentItemsByDateRange(LocalDate startDate, LocalDate endDate) {
 
         // 실사 품목 목록 조회

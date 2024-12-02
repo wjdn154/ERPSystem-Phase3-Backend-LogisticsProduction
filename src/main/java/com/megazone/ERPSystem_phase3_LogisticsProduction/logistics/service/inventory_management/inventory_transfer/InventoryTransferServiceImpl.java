@@ -26,6 +26,7 @@ public class InventoryTransferServiceImpl implements InventoryTransferService {
     private final EmployeeRepository employeeRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public void transferInventory(TransferRequestDTO transferRequestDTO) {
         Inventory sendInventory = inventoryRepository.findById(transferRequestDTO.getInventoryId())
                 .orElseThrow(() -> new IllegalArgumentException("해당 재고를 찾을 수 없습니다."));
@@ -80,11 +81,15 @@ public class InventoryTransferServiceImpl implements InventoryTransferService {
                 .build();
     }
 
-    private Long generateWorkNumber(LocalDate transferDate) {
+    @Transactional(readOnly = true)
+    @Override
+    public Long generateWorkNumber(LocalDate transferDate) {
         return inventoryHistoryRepository.countByWorkDate(transferDate) + 1;
     }
 
-    private Long generateSlipNumber(LocalDate transferDate) {
+    @Override
+    @Transactional(readOnly = true)
+    public Long generateSlipNumber(LocalDate transferDate) {
         return inventoryHistoryRepository.countBySlipDate(transferDate) + 1;
     }
 

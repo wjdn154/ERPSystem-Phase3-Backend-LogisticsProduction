@@ -1,12 +1,15 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.resource_data.material;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+
+
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.model.basic_information_management.client.Client;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.client.ClientRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.Product;
@@ -21,9 +24,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.r
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.resource_data.MaterialHazardous.MaterialHazardousRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.resource_data.materialData.MaterialDataRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.resource_data.materialProduct.MaterialProductRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -42,11 +45,12 @@ public class MaterialDataServiceImpl implements MaterialDataService{
     private final ProductRepository productRepository;
     private final MaterialProductRepository materialProductRepository;
     private final MaterialHazardousRepository materialHazardousRepository;
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
 
     //자재 리스트 조회
     @Override
+    @Transactional(readOnly = true)
     public List<ListMaterialDataDTO> findAllMaterial() {
 
         return materialDataRepository.findAllByOrderByIdDesc().stream()
@@ -65,6 +69,7 @@ public class MaterialDataServiceImpl implements MaterialDataService{
 
     //자재 상세 조회
     @Override
+    @Transactional(readOnly = true)
     public Optional<MaterialDataShowDTO> findMaterialById(Long id) {
 
         MaterialData materialData = materialDataRepository.findById(id)
@@ -128,18 +133,18 @@ public class MaterialDataServiceImpl implements MaterialDataService{
         //최종적으로 모든 연관된 엔티티 저장
         MaterialData updateMaterial = materialDataRepository.save(saveMaterialData);
 
-        recentActivityRepository.save(RecentActivity.builder()
-                .activityDescription(updateMaterial.getMaterialName() + "자재 정보 변경")
-                .activityType(ActivityType.PRODUCTION)
-                .activityTime(LocalDateTime.now())
-                .build());
+        integratedService.recentActivitySave(
+                RecentActivityEntryDTO.create(
+                updateMaterial.getMaterialName() + "자재 정보 변경",
+                ActivityType.PRODUCTION));
 
 
-        notificationService.createAndSendNotification(
-                ModuleType.PRODUCTION,
-                PermissionType.ALL,
-                updateMaterial.getMaterialName() + " 자재 정보가 변경되었습니다.",
-                NotificationType.UPDATE_MATERIAL);
+        notificationService.createAndSend(
+                UserNotificationCreateAndSendDTO.create(
+                        ModuleType.PRODUCTION,
+                        PermissionType.ALL,
+                        updateMaterial.getMaterialName() + " 자재 정보가 변경되었습니다.",
+                        NotificationType.UPDATE_MATERIAL));
 
         MaterialDataShowDTO listMaterialDataDTO = materialCreateDTO(updateMaterial);
 
@@ -160,18 +165,17 @@ public class MaterialDataServiceImpl implements MaterialDataService{
         //엔티티 저장
         MaterialData createMaterial = materialDataRepository.save(materialData);
 
-        recentActivityRepository.save(RecentActivity.builder()
-                .activityDescription("신규 자재 1건 생성")
-                .activityType(ActivityType.PRODUCTION)
-                .activityTime(LocalDateTime.now())
-                .build());
+        integratedService.recentActivitySave(
+                RecentActivityEntryDTO.create(
+                        "신규 자재 1건 생성",
+                        ActivityType.PRODUCTION));
 
-
-        notificationService.createAndSendNotification(
-                ModuleType.PRODUCTION,
-                PermissionType.ALL,
-                "신규 자재 1건이 생성되었습니다.",
-                NotificationType.NEW_MATERIAL);
+        notificationService.createAndSend(
+                UserNotificationCreateAndSendDTO.create(
+                        ModuleType.PRODUCTION,
+                        PermissionType.ALL,
+                        "신규 자재 1건이 생성되었습니다.",
+                        NotificationType.NEW_MATERIAL));
 
         //엔티티를 dto로 변환
         MaterialDataShowDTO materialDataShowDTO = materialCreateDTO(createMaterial);
@@ -202,6 +206,7 @@ public class MaterialDataServiceImpl implements MaterialDataService{
 
     //해당 자재의 유해물질 리스트 조회
     @Override
+    @Transactional(readOnly = true)
     public ListHazardousMaterialDTO findAllHazardousMaterialById(Long id) {
         
         //자재 아이디로 자재 조회
@@ -319,6 +324,7 @@ public class MaterialDataServiceImpl implements MaterialDataService{
 
     //해당 자재의 품목 리스트 조회
     @Override
+    @Transactional(readOnly = true)
     public ListProductMaterialDTO findAllProductMaterialById(Long id) {
 
         //자재 아이디로 자재 조회

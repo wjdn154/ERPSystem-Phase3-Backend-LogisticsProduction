@@ -1,6 +1,9 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.controller.production_schedule.common_scheduling;
 
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.common_scheduling.ProductionOrder;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.dto.CalculatorDTO;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.dto.CalculatorResponseDTO;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.dto.ProductionCalculatorDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.dto.ProductionOrderDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.work_performance.work_report.dto.WorkPerformanceUpdateDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.production_schedule.common_scheduling.production_order.ProductionOrderRepository;
@@ -11,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -152,5 +156,37 @@ public class ProductionOrderController {
         }
     }
 
+    @PostMapping("/calculator/wasteScore")
+    public ResponseEntity<Object> wasteScoreCalculator(@RequestBody ProductionCalculatorDTO dto) {
+        try {
+            Integer responseData = productionOrderService.calculateWasteScore(dto.getActualData(),dto.getAverageData());
+            return ResponseEntity.status(HttpStatus.OK).body(responseData);
+        }
+        catch(Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/calculator/energyScore")
+    public ResponseEntity<Object> energyScoreCalculator(@RequestBody ProductionCalculatorDTO dto) {
+        try {
+            Integer responseData = productionOrderService.calculateEnergyScore(dto.getActualData(),dto.getAverageData());
+            return ResponseEntity.status(HttpStatus.OK).body(responseData);
+        }
+        catch(Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/calculator/scoreAll")
+    public ResponseEntity<Object> scoreCalculator(@RequestBody CalculatorDTO dto) {
+        try {
+            CalculatorResponseDTO responseData = productionOrderService.scoreCalculatorAll(dto);
+            return ResponseEntity.status(HttpStatus.OK).body(responseData);
+        }
+        catch(Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
 }
 

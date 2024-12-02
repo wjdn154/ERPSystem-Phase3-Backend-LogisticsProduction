@@ -1,12 +1,15 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.basic_data.process_routing.ProcessRouting;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+
+
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.process_routing.dto.ProcessRoutingDetailDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.Product;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.dto.ProductDetailDto;
@@ -28,9 +31,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.b
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.basic_data.process_routing.PrcessRouting.ProcessRoutingRepository;
 
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.basic_data.process_routing.RoutingStep.RoutingStepRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -46,7 +49,7 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
     private final ProcessDetailsRepository processDetailsRepository;
     private final ProductRepository productRepository;
     private final RoutingStepRepository routingStepRepository;
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
 //    private final ProductGroupRepository productGroupRepository;
 
@@ -166,6 +169,7 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
      */
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProcessDetailsDTO> searchProcessDetails() {
         List<ProcessDetails> processDetailsList = processDetailsRepository.findAll();
         return processDetailsList.stream()
@@ -174,6 +178,7 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductDto> searchProducts(String keyword) {
         List<Product> productList = productRepository.findByCodeContainingOrNameContaining(keyword, keyword);
         if (productList.isEmpty()) {
@@ -190,7 +195,9 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
      * @param processDetailsDTO 조회할 ProcessDetails의 정보를 담은 DTO
      * @return ProcessDetails의 ID
      */
-    private Long getProcessIdByCodeOrName(ProcessDetailsDTO processDetailsDTO) {
+    @Override
+    @Transactional(readOnly = true)
+    public Long getProcessIdByCodeOrName(ProcessDetailsDTO processDetailsDTO) {
         if (processDetailsDTO == null) {
             throw new IllegalArgumentException("생산공정 데이터가 비어 있습니다.");
         }
@@ -203,6 +210,8 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
     }
 
 
+    @Override
+    @Transactional(readOnly = true)
     public ProcessDetailsDTO getProcessDetailsById(Long id) {
         return processDetailsRepository.findById(id)
                 .map(this::convertProcessDetailsToDTO)
@@ -210,6 +219,7 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProcessRoutingDetailDTO getProcessRoutingById(Long id) {
 
         ProcessRouting processRouting = processRoutingRepository.findById(id)
@@ -255,7 +265,9 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
      * @param productDetailDto 조회할 Product의 정보를 담은 DTO
      * @return Product 엔티티
      */
-    private Product getProductByCodeOrName(ProductDetailDto productDetailDto) {
+    @Override
+    @Transactional(readOnly = true)
+    public Product getProductByCodeOrName(ProductDetailDto productDetailDto) {
         // 우선 코드로 조회, 없으면 이름으로 조회
         return productRepository.findByCode(productDetailDto.getCode())
                 .or(() -> productRepository.findByName(productDetailDto.getName()))
@@ -264,7 +276,9 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
     }
 
 
-    private ProductDto getProductById(Long id) {
+    @Override
+    @Transactional(readOnly = true)
+    public ProductDto getProductById(Long id) {
         return productRepository.findById(id)
                 .map(this::convertProductToDTO)
                 .orElseThrow(() -> new IllegalArgumentException("해당 ID의 제품을 찾을 수 없습니다."));
@@ -315,18 +329,16 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
 
         routingStepRepository.flush();
 
-        recentActivityRepository.save(RecentActivity.builder()
-                .activityDescription(existingRouting.getName() + "루트 정보 변경")
-                .activityType(ActivityType.PRODUCTION)
-                .activityTime(LocalDateTime.now())
-                .build());
-
-
-        notificationService.createAndSendNotification(
-                ModuleType.PRODUCTION,
-                PermissionType.ALL,
-                existingRouting.getName() + "루트 정보가 변경되었습니다.",
-                NotificationType.UPDATE_ROUT);
+        integratedService.recentActivitySave(
+                RecentActivityEntryDTO.create(
+                        existingRouting.getName() + "루트 정보 변경",
+                        ActivityType.PRODUCTION));
+        notificationService.createAndSend(
+                UserNotificationCreateAndSendDTO.create(
+                        ModuleType.PRODUCTION,
+                        PermissionType.ALL,
+                        existingRouting.getName() + "루트 정보가 변경되었습니다.",
+                        NotificationType.UPDATE_ROUT));
 
         return new ProcessRoutingDetailDTO(
                 existingRouting.getId(),
@@ -483,7 +495,9 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
         return processRouting;
     }
 
-    private RoutingStep convertDTOToRoutingStep(RoutingStepDTO dto, ProcessRouting processRouting) {
+    @Override
+    @Transactional(readOnly = true)
+    public RoutingStep convertDTOToRoutingStep(RoutingStepDTO dto, ProcessRouting processRouting) {
         Long processId = dto.getId().getProcessId(); // id에서 processId 추출
 
         ProcessDetails processDetails = processDetailsRepository.findById(processId)

@@ -1,12 +1,13 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.service.shipping_processing_management;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.inventory_management.inventory.Inventory;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.Product;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.sales_management.SaleState;
@@ -21,9 +22,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.pr
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.sales_management.shipping_order.ShippingOrderRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.sales_management.shipping_order_details.ShippingOrderDetailRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.shipping_processing_management.ShippingProcessingRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -40,7 +41,7 @@ public class ShippingProcessingServiceImpl implements ShippingProcessingService 
     private final ShippingOrderDetailRepository shippingOrderDetailRepository;
     private final ShippingProcessingRepository shippingProcessingRepository;
     private final ShippingOrderRepository shippingOrderRepository;
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
 
     @Override
@@ -76,20 +77,17 @@ public class ShippingProcessingServiceImpl implements ShippingProcessingService 
         shippingProcessingRepository.save(shippingProcessing);
 
         // RecentActivity 기록
-        recentActivityRepository.save(RecentActivity.builder()
-                .activityDescription("출고 지시가 등록되었습니다. 출고 번호: " + shippingNumber)
-                .activityType(ActivityType.LOGISTICS)
-                .activityTime(LocalDateTime.now())
-                .build());
-
+        integratedService.recentActivitySave(
+                RecentActivityEntryDTO.create(
+                        "출고 지시가 등록되었습니다. 출고 번호: " + shippingNumber,
+                        ActivityType.LOGISTICS));
         // 관리자에게 출고 지시 등록 알림 전송
-        notificationService.createAndSendNotification(
-                ModuleType.LOGISTICS,
-                PermissionType.ADMIN,
-                "출고 지시가 대기 상태로 등록되었습니다. 출고 번호: " + shippingNumber,
-                NotificationType.SHIPPING_ORDER
-        );
-
+        notificationService.createAndSend(
+                UserNotificationCreateAndSendDTO.create(
+                        ModuleType.LOGISTICS,
+                        PermissionType.ADMIN,
+                        "출고 지시가 대기 상태로 등록되었습니다. 출고 번호: " + shippingNumber,
+                        NotificationType.SHIPPING_ORDER));
 
         ShippingOrderDetail updatedShippingOrderDetail = ShippingOrderDetail.builder()
                 .id(shippingOrderDetail.getId())
@@ -123,6 +121,7 @@ public class ShippingProcessingServiceImpl implements ShippingProcessingService 
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ShippingProcessingResponseDTO> getShippingProcessingList(LocalDate startDate, LocalDate endDate) {
         return shippingProcessingRepository.findShippingProcessingByDateRangeAndStatus(startDate, endDate)
                 .stream()
@@ -173,20 +172,17 @@ public class ShippingProcessingServiceImpl implements ShippingProcessingService 
         shippingProcessingRepository.save(shippingProcessing);
 
         // RecentActivity 기록
-        recentActivityRepository.save(RecentActivity.builder()
-                .activityDescription("출고 지시 번호: " + shippingProcessing.getShippingDate() + "/ " + shippingProcessing.getShippingNumber() + " 출고 완료")
-                .activityType(ActivityType.LOGISTICS)
-                .activityTime(LocalDateTime.now())
-                .build());
-
+        integratedService.recentActivitySave(
+                RecentActivityEntryDTO.create(
+                        "출고 지시 번호: " + shippingProcessing.getShippingDate() + "/ " + shippingProcessing.getShippingNumber() + " 출고 완료",
+                        ActivityType.LOGISTICS));
         // 관리자에게 출고 처리 완료 알림 전송
-        notificationService.createAndSendNotification(
-                ModuleType.LOGISTICS,
-                PermissionType.ADMIN,
-                "출고 지시 번호: " + shippingProcessing.getShippingDate() + "/ " + shippingProcessing.getShippingNumber() + " 출고 완료",
-                NotificationType.SHIPPED_ORDER
-        );
-
+        notificationService.createAndSend(
+                UserNotificationCreateAndSendDTO.create(
+                        ModuleType.LOGISTICS,
+                        PermissionType.ADMIN,
+                        "출고 지시 번호: " + shippingProcessing.getShippingDate() + "/ " + shippingProcessing.getShippingNumber() + " 출고 완료",
+                        NotificationType.SHIPPED_ORDER));
 
         // ShippingOrderDetail 상태 업데이트
         shippingOrderDetail = ShippingOrderDetail.builder()
@@ -220,18 +216,16 @@ public class ShippingProcessingServiceImpl implements ShippingProcessingService 
             shippingOrderRepository.save(shippingOrder);
 
             // 출고 완료 알림 및 최근 활동 기록
-            recentActivityRepository.save(RecentActivity.builder()
-                    .activityDescription("주문 ID: " + shippingOrder.getId() + shippingOrder.getShippingOrderDetails().size() + "건 출고 처리 완료")
-                    .activityType(ActivityType.LOGISTICS)
-                    .activityTime(LocalDateTime.now())
-                    .build());
-
-            notificationService.createAndSendNotification(
-                    ModuleType.LOGISTICS,
-                    PermissionType.ADMIN,
-                    "모든 출고 지시가 완료되었습니다. 주문 ID: " + shippingOrder.getId(),
-                    NotificationType.SHIPPING_ORDER_COMPLETE
-            );
+            integratedService.recentActivitySave(
+                    RecentActivityEntryDTO.create(
+                            "주문 ID: " + shippingOrder.getId() + shippingOrder.getShippingOrderDetails().size() + "건 출고 처리 완료",
+                            ActivityType.LOGISTICS));
+            notificationService.createAndSend(
+                    UserNotificationCreateAndSendDTO.create(
+                            ModuleType.LOGISTICS,
+                            PermissionType.ADMIN,
+                            "모든 출고 지시가 완료되었습니다. 주문 ID: " + shippingOrder.getId(),
+                            NotificationType.SHIPPING_ORDER_COMPLETE));
         }
     }
 

@@ -1,13 +1,14 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.service.sales_management.shipping_order;
 
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.model.basic_information_management.client.Client;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.client.ClientRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.Employee;
@@ -24,12 +25,11 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.ba
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.CurrencyRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.sales_management.shipping_order.ShippingOrderRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -50,7 +50,7 @@ public class ShippingOrderServiceImpl implements ShippingOrderService {
     private final WarehouseRepository warehouseRepository;
     private final CurrencyRepository currencyRepository;
     private final ProductRepository productRepository;
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
 
 
@@ -60,6 +60,7 @@ public class ShippingOrderServiceImpl implements ShippingOrderService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public List<ShippingOrderResponseDto> findAllShippingOrders(SearchDTO dto) {
 
         List<ShippingOrder> shippingOrders;
@@ -127,6 +128,7 @@ public class ShippingOrderServiceImpl implements ShippingOrderService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public Optional<ShippingOrderResponseDetailDto> findShippingOrderDetailById(Long id) {
 
         return shippingOrderRepository.findById(id)
@@ -184,17 +186,16 @@ public class ShippingOrderServiceImpl implements ShippingOrderService {
             ShippingOrder shippingOrder = toEntity(createDto);
             shippingOrder = shippingOrderRepository.save(shippingOrder);
 
-            recentActivityRepository.save(RecentActivity.builder()
-                    .activityDescription("신규 출하지시서 등록 : " + shippingOrder.getDate() + " -" + shippingOrder.getId())
-                    .activityType(ActivityType.LOGISTICS)
-                    .activityTime(LocalDateTime.now())
-                    .build());
-            notificationService.createAndSendNotification(
-                    ModuleType.LOGISTICS,
-                    PermissionType.USER,
-                    "신규 출하지시서 (" + shippingOrder.getDate() + " -" + shippingOrder.getId() + ") 가 등록되었습니다.",
-                    NotificationType.NEW_ENTRY
-            );
+            integratedService.recentActivitySave(
+                    RecentActivityEntryDTO.create(
+                            "신규 출하지시서 등록 : " + shippingOrder.getDate() + " -" + shippingOrder.getId(),
+                            ActivityType.LOGISTICS));
+            notificationService.createAndSend(
+                    UserNotificationCreateAndSendDTO.create(
+                            ModuleType.LOGISTICS,
+                            PermissionType.USER,
+                            "신규 출하지시서 (" + shippingOrder.getDate() + " -" + shippingOrder.getId() + ") 가 등록되었습니다.",
+                            NotificationType.NEW_ENTRY));
             return toDetailDto(shippingOrder);
         } catch (Exception e) {
             log.error("출하지시서 생성 실패: ", e);
@@ -204,7 +205,9 @@ public class ShippingOrderServiceImpl implements ShippingOrderService {
 
     /** 출하지시서 직접 등록 관련 메서드 **/
     // 출하지시서 등록 DTO -> Entity 변환 메소드
-    private ShippingOrder toEntity(ShippingOrderCreateDto dto) {
+    @Override
+    @Transactional(readOnly = true)
+    public ShippingOrder toEntity(ShippingOrderCreateDto dto) {
         ShippingOrder newOrder = ShippingOrder.builder()
                 .client(clientRepository.findById(dto.getClientId())
                         .orElseThrow(() -> new RuntimeException("거래처 정보를 찾을 수 없습니다.")))
@@ -220,7 +223,9 @@ public class ShippingOrderServiceImpl implements ShippingOrderService {
         return getShippingOrder(dto, newOrder);
     }
 
-    private ShippingOrder getShippingOrder(ShippingOrderCreateDto dto, ShippingOrder newOrder) {
+    @Transactional(readOnly = true)
+    @Override
+    public ShippingOrder getShippingOrder(ShippingOrderCreateDto dto, ShippingOrder newOrder) {
         dto.getItems().forEach(item -> {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new RuntimeException("품목 정보를 찾을 수 없습니다."));

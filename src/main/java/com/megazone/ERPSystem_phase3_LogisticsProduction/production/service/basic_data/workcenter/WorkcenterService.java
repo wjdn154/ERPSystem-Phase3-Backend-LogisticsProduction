@@ -6,6 +6,7 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.dto.WorkerAssignmentDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.resource_data.equipment.dto.EquipmentDataDTO;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +20,9 @@ public interface WorkcenterService {
 
     Optional<WorkcenterDTO> findByCode(String code);
 
+    // Entity로 변환하는 메서드
+    Workcenter convertToEntity(WorkcenterDTO workcenterDTO);
+
     Optional<WorkcenterDTO> findById(Long id);
 
     Optional<WorkcenterDTO> deleteByCode(String code);
@@ -30,6 +34,8 @@ public interface WorkcenterService {
     List<EquipmentDataDTO> findEquipmentByWorkcenterCode(String workcenterCode);
 
     List<WorkerAssignmentDTO> findWorkerAssignmentsByWorkcenterCode(String workcenterCode);
+
+    int getTodayWorkerCount(String workcenterCode, LocalDate currentDate);
 
     List<WorkerAssignmentDTO> findTodayWorkers(String workcenterCode);
 }

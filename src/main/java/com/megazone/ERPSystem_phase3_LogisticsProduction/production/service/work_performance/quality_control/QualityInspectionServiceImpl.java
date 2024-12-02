@@ -27,6 +27,7 @@ public class QualityInspectionServiceImpl implements QualityInspectionService{
 
     //모든 품질 검사 리스트 조회
     @Override
+    @Transactional(readOnly = true)
     public List<QualityInspectionListDTO> findAllQualityInspection() {
         return null;
 //        return qualityInspectionRepository.findAllByOrderByIdDesc().stream()
@@ -68,6 +69,7 @@ public class QualityInspectionServiceImpl implements QualityInspectionService{
 
     //해당 품질 검사 상세 조회
     @Override
+    @Transactional(readOnly = true)
     public Optional<QualityInspectionDetailDTO> findQualityInspection(Long id) {
 
         //아이디 존재 여부 확인
@@ -139,7 +141,9 @@ public class QualityInspectionServiceImpl implements QualityInspectionService{
     }
 
     //품질검사 등록 dto를 엔티티로 변환
-    private QualityInspection qualityInspectionToEntity(QualityInspectionSaveDTO dto) {
+    @Override
+    @Transactional(readOnly = true)
+    public QualityInspection qualityInspectionToEntity(QualityInspectionSaveDTO dto) {
 
         WorkPerformance workPerformance = workPerformanceRepository.findById(dto.getWorkPerformanceId())
                 .orElseThrow(() -> new IllegalArgumentException("해당하는 작업실적 아이디를 조회할 수 없습니다."));
