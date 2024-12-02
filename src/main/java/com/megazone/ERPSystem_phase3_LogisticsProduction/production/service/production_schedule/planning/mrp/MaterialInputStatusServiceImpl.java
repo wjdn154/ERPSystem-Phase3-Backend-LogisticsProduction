@@ -13,9 +13,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.p
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.resource_data.equipment.EquipmentDataRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.resource_data.materialData.MaterialDataRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -103,6 +103,7 @@ public class MaterialInputStatusServiceImpl implements MaterialInputStatusServic
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MaterialInputStatusDto getMaterialInputStatusById(Long id) {
         MaterialInputStatus inputStatus = materialInputStatusRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("ID가 " + id + "인 자재 투입 현황을 찾을 수 없습니다."));
@@ -110,6 +111,7 @@ public class MaterialInputStatusServiceImpl implements MaterialInputStatusServic
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<MaterialInputStatusDto> getAllMaterialInputStatuses() {
         List<MaterialInputStatus> inputStatusList = materialInputStatusRepository.findAll();
         return inputStatusList.stream()

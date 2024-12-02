@@ -1,12 +1,13 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.basic_data.workcenter;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.warehouse_management.warehouse.Warehouse;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.warehouse_management.warehouse.dto.WarehouseResponseDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.warehouse_management.warehouse.enums.WarehouseType;
@@ -24,13 +25,12 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.p
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.production_schedule.common_scheduling.worker_assignment.WorkerAssignmentRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.resource_data.equipment.EquipmentDataRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -48,7 +48,7 @@ public class WorkcenterServiceImpl implements WorkcenterService {
     private final EquipmentDataRepository equipmentDataRepository;
     private final WorkerAssignmentRepository workerAssignmentRepository;
     private final ProductionOrderRepository productionOrderRepository;
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
 
     // DTO로 변환하는 메서드
@@ -88,7 +88,9 @@ public class WorkcenterServiceImpl implements WorkcenterService {
     }
 
     // Entity로 변환하는 메서드
-    private Workcenter convertToEntity(WorkcenterDTO workcenterDTO) {
+    @Override
+    @Transactional(readOnly = true)
+    public Workcenter convertToEntity(WorkcenterDTO workcenterDTO) {
 
 
         List<EquipmentData> equipmentList = Optional.ofNullable(workcenterDTO.getEquipmentIds())
@@ -176,18 +178,17 @@ public class WorkcenterServiceImpl implements WorkcenterService {
 
             Workcenter updatedWorkcenter = workcenterRepository.save(existingWorkcenter);
 
-            recentActivityRepository.save(RecentActivity.builder()
-                    .activityDescription(updatedWorkcenter.getName() + " 작업장 정보 변경")
-                    .activityType(ActivityType.PRODUCTION)
-                    .activityTime(LocalDateTime.now())
-                    .build());
+            integratedService.recentActivitySave(
+                    RecentActivityEntryDTO.create(
+                            updatedWorkcenter.getName() + " 작업장 정보 변경",
+                            ActivityType.PRODUCTION));
 
-
-            notificationService.createAndSendNotification(
-                    ModuleType.PRODUCTION,
-                    PermissionType.ALL,
-                    updatedWorkcenter.getName() + " 작업장 정보가 변경되었습니다.",
-                    NotificationType.UPDATE_WORKCENTER);
+            notificationService.createAndSend(
+                    UserNotificationCreateAndSendDTO.create(
+                            ModuleType.PRODUCTION,
+                            PermissionType.ALL,
+                            updatedWorkcenter.getName() + " 작업장 정보가 변경되었습니다.",
+                            NotificationType.UPDATE_WORKCENTER));
 
             return convertToDTO(updatedWorkcenter);
         });
@@ -206,6 +207,7 @@ public class WorkcenterServiceImpl implements WorkcenterService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<WorkcenterDTO> findAll() {
         LocalDate today = LocalDate.now();
         List<Workcenter> workcenters = workcenterRepository.findAllWithDetails();
@@ -251,12 +253,15 @@ public class WorkcenterServiceImpl implements WorkcenterService {
     }
 
 
+    @Override
+    @Transactional(readOnly = true)
     public int getTodayWorkerCount(String workcenterCode, LocalDate currentDate) {
         List<WorkerAssignment> todayAssignments = workerAssignmentRepository.getWorkerAssignments(workcenterCode, Optional.of(currentDate));
         return todayAssignments.size(); // 작업자 수 반환
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<WorkerAssignmentDTO> findTodayWorkers(String workcenterCode) {
         LocalDate today = LocalDate.now();
 
@@ -282,6 +287,7 @@ public class WorkcenterServiceImpl implements WorkcenterService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<WorkcenterDTO> findByCode(String code) {
         return workcenterRepository.findByCode(code).map(workcenter -> {
             WorkcenterDTO workcenterDTO = convertToDTO(workcenter);
@@ -296,6 +302,7 @@ public class WorkcenterServiceImpl implements WorkcenterService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<WarehouseResponseDTO> findAllFactories() {
         return warehouseRepository.findAll().stream()
                 .filter(warehouse -> warehouse.getWarehouseType() == WarehouseType.FACTORY
@@ -316,6 +323,7 @@ public class WorkcenterServiceImpl implements WorkcenterService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<EquipmentDataDTO> findEquipmentByWorkcenterCode(String workcenterCode) {
         Workcenter workcenter = workcenterRepository.findByCode(workcenterCode)
                 .orElseThrow(() -> new EntityNotFoundException("작업장 코드를 찾을 수 없습니다: " + workcenterCode));
@@ -353,6 +361,7 @@ public class WorkcenterServiceImpl implements WorkcenterService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<WorkerAssignmentDTO> findWorkerAssignmentsByWorkcenterCode(String workcenterCode) {
         Workcenter workcenter = workcenterRepository.findByCode(workcenterCode)
                 .orElseThrow(() -> new EntityNotFoundException("작업장 코드를 찾을 수 없습니다: " + workcenterCode));

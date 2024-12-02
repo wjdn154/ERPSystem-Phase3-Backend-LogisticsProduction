@@ -1,13 +1,12 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.service.sales_management.orders;
-
-
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.model.basic_information_management.voucher_entry.sales_and_purchase_voucher_entry.enums.ElectronicTaxInvoiceStatus;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.client.ClientRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.VatTypeService;
@@ -15,7 +14,6 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.VatTypeShowDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.Employee;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.repository.basic_information_management.Employee.EmployeeRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.dto.EmployeeOneDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.Product;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.purchase_management.dto.SearchDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.sales_management.Orders;
@@ -28,13 +26,12 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.ba
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.CurrencyRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.sales_management.orders.OrdersRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,14 +47,15 @@ public class OrdersServiceImpl implements OrdersService {
     private final WarehouseRepository warehouseRepository;
     private final CurrencyRepository currencyRepository;
     private final ProductRepository productRepository;
-    private final RecentActivityRepository recentActivityRepository;
-    private final NotificationService notificationService;
     private final VatTypeService vatTypeService;
+    private final IntegratedService integratedService;
+    private final NotificationService notificationService;
 
 
 
 
     @Override
+    @Transactional(readOnly = true)
     public List<OrdersResponseDto> findAllOrders(SearchDTO dto) {
         List<Orders> orders;
 
@@ -139,6 +137,7 @@ public class OrdersServiceImpl implements OrdersService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public Optional<OrdersResponseDetailDto> findOrdersDetailById(Long id) {
         return ordersRepository.findById(id)
                 .map(this::toDetailDto);
@@ -209,17 +208,16 @@ public class OrdersServiceImpl implements OrdersService {
             Orders orders = toEntity(createDto);
             orders = ordersRepository.save(orders);
 
-            recentActivityRepository.save(RecentActivity.builder()
-                    .activityDescription("신규 주문서 등록 : " + orders.getDate() + " -" + orders.getId())
-                    .activityType(ActivityType.LOGISTICS)
-                    .activityTime(LocalDateTime.now())
-                    .build());
-            notificationService.createAndSendNotification(
-                    ModuleType.LOGISTICS,
-                    PermissionType.USER,
-                    "신규 주문서 (" + orders.getDate() + " -" + orders.getId() + ") 가 등록되었습니다.",
-                    NotificationType.NEW_ENTRY
-            );
+            integratedService.recentActivitySave(
+                    RecentActivityEntryDTO.create(
+                            "신규 주문서 등록 : " + orders.getDate() + " -" + orders.getId(),
+                            ActivityType.LOGISTICS));
+            notificationService.createAndSend(
+                    UserNotificationCreateAndSendDTO.create(
+                            ModuleType.LOGISTICS,
+                            PermissionType.USER,
+                            "신규 주문서 (" + orders.getDate() + " -" + orders.getId() + ") 가 등록되었습니다.",
+                            NotificationType.NEW_ENTRY));
             return toDetailDto(orders);
         } catch (Exception e) {
             log.error("주문서 생성 실패: ", e);
@@ -229,7 +227,9 @@ public class OrdersServiceImpl implements OrdersService {
 
     /** 주문서 등록 관련 메서드 **/
     // 주문서 등록 DTO -> Entity 변환 메소드
-    private Orders toEntity(OrdersCreateDto dto) {
+    @Override
+    @Transactional(readOnly = true)
+    public Orders toEntity(OrdersCreateDto dto) {
 
         Orders orders = Orders.builder()
                 .client(clientRepository.findById(dto.getClientId())
@@ -253,7 +253,9 @@ public class OrdersServiceImpl implements OrdersService {
         return getOrders(dto, orders);
     }
 
-    private Orders getOrders(OrdersCreateDto dto, Orders orders) {
+    @Override
+    @Transactional(readOnly = true)
+    public Orders getOrders(OrdersCreateDto dto, Orders orders) {
         if (orders.getCurrency() == null) {
             throw new RuntimeException("통화 정보가 설정되지 않았습니다.");
         }

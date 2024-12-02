@@ -1,12 +1,13 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.service.purchase_management.purchase_request;
 
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.RecentActivity;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.dto.RecentActivityEntryDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.dashboard.enums.ActivityType;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.dto.UserNotificationCreateAndSendDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.ModuleType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.NotificationType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.repository.dashboard.RecentActivityRepository;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.notification.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.model.basic_information_management.client.Client;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.Employee;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.repository.basic_information_management.Employee.EmployeeRepository;
@@ -24,20 +25,19 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.ba
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.CurrencyRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.purchase_request.PurchaseRequestRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 @Slf4j
+@Transactional
 public class PurchaseRequestServiceImpl implements PurchaseRequestService {
 
     private final PurchaseRequestRepository purchaseRequestRepository;
@@ -45,7 +45,7 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
     private final WarehouseRepository warehouseRepository;
     private final CurrencyRepository currencyRepository;
     private final ProductRepository productRepository;
-    private final RecentActivityRepository recentActivityRepository;
+    private final IntegratedService integratedService;
     private final NotificationService notificationService;
 
     /**
@@ -53,6 +53,7 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public List<PurchaseRequestResponseDto> findAllPurchaseRequests(SearchDTO dto) {
 
         List<PurchaseRequest> purchaseRequests;
@@ -134,6 +135,7 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public Optional<PurchaseRequestResponseDetailDto> findPurchaseRequestDetailById(Long id) {
 
         return purchaseRequestRepository.findById(id)
@@ -205,18 +207,16 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
             purchaseRequest = purchaseRequestRepository.save(purchaseRequest);
 
 
-            recentActivityRepository.save(RecentActivity.builder()
-                    .activityDescription("신규 발주요청 등록 : " + purchaseRequest.getDate() + " -" + purchaseRequest.getId())
-                    .activityType(ActivityType.LOGISTICS)
-                    .activityTime(LocalDateTime.now())
-                    .build());
-            notificationService.createAndSendNotification(
-                    ModuleType.LOGISTICS,
-                    PermissionType.USER,
-                    "신규 발주요청 (" + purchaseRequest.getDate() + " -" + purchaseRequest.getId() + ") 이 등록되었습니다.",
-                    NotificationType.NEW_ENTRY
-            );
-
+            integratedService.recentActivitySave(
+                    RecentActivityEntryDTO.create(
+                            "신규 발주요청 등록 : " + purchaseRequest.getDate() + " -" + purchaseRequest.getId(),
+                            ActivityType.LOGISTICS));
+            notificationService.createAndSend(
+                    UserNotificationCreateAndSendDTO.create(
+                            ModuleType.LOGISTICS,
+                            PermissionType.USER,
+                            "신규 발주요청 (" + purchaseRequest.getDate() + " -" + purchaseRequest.getId() + ") 이 등록되었습니다.",
+                            NotificationType.NEW_ENTRY));
             return toDetailDto(purchaseRequest);
         } catch (Exception e) {
             log.error("발주 요청 생성 실패: ", e);
@@ -226,7 +226,9 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
 
     /** 발주요청 등록 관련 메서드 **/
     // 발주 요청 등록 DTO -> Entity 변환 메소드
-    private PurchaseRequest toEntity(PurchaseRequestCreateDto dto) {
+    @Override
+    @Transactional(readOnly = true)
+    public PurchaseRequest toEntity(PurchaseRequestCreateDto dto) {
 
         PurchaseRequest newRequest = PurchaseRequest.builder()
                 .manager(employeeRepository.findById(dto.getManagerId())
@@ -243,7 +245,9 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
         return getPurchaseRequest(dto, newRequest);
     }
 
-    private PurchaseRequest getPurchaseRequest(PurchaseRequestCreateDto dto, PurchaseRequest newRequest) {
+    @Transactional(readOnly = true)
+    @Override
+    public PurchaseRequest getPurchaseRequest(PurchaseRequestCreateDto dto, PurchaseRequest newRequest) {
         dto.getItems().forEach(item -> {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new RuntimeException("품목 정보를 찾을 수 없습니다."));

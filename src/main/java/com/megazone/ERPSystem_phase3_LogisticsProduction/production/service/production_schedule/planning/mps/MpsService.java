@@ -1,5 +1,6 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.production_schedule.planning.mps;
 
+import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.planning.Mps;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.planning.dto.MpsDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.production_schedule.planning.dto.searchMpsDTO;
 
@@ -20,6 +21,10 @@ public interface MpsService {
     void updateMpsStatusBasedOnOrders(Long mpsId);
 
     MpsDTO confirmMps(Long mpsId);
+
+    MpsDTO convertToDto(Mps mps);
+
+    Mps convertToEntity(MpsDTO dto);
 
 
 //    void createMps(ProductionRequest request);

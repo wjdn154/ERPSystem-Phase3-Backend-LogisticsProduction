@@ -11,10 +11,10 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.b
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.basic_data.bom.StandardBomRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.resource_data.materialData.MaterialDataRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -98,6 +98,7 @@ public class StandardBomServiceImpl implements StandardBomService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public StandardBomDTO getStandardBomById(Long id) {
         StandardBom bom = standardBomRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("요청하신 BOM을 찾을 수 없습니다."));
 
@@ -109,6 +110,7 @@ public class StandardBomServiceImpl implements StandardBomService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public List<StandardBomDTO> getAllStandardBoms() {
         List<StandardBom> standardBoms = standardBomRepository.findAll();
 
@@ -178,6 +180,7 @@ public class StandardBomServiceImpl implements StandardBomService {
 
     // 정전개를 위한 상위 품목으로 하위 BOM 구성 조회
     @Override
+    @Transactional(readOnly = true)
     public List<StandardBomDTO> getChildBoms(Long parentProductId, Set<Long> checkedBomIds) {
 
         if (checkedBomIds.contains(parentProductId)) {
@@ -240,7 +243,9 @@ public class StandardBomServiceImpl implements StandardBomService {
 //
 //    }
 
-    private StandardBom convertToEntity(StandardBomDTO standardBomDTO) {
+    @Override
+    @Transactional(readOnly = true)
+    public StandardBom convertToEntity(StandardBomDTO standardBomDTO) {
         
 //        StandardBom parentBom = Optional.ofNullable(standardBomDTO.getParentBom()).map(this::convertToEntity).orElse(null);
 
@@ -278,7 +283,9 @@ public class StandardBomServiceImpl implements StandardBomService {
                 .build();
     }
 
-    private StandardBomMaterial convertToEntity(BomMaterialDTO materialDTO) {
+    @Override
+    @Transactional(readOnly = true)
+    public StandardBomMaterial convertToEntity(BomMaterialDTO materialDTO) {
         StandardBom bom = standardBomRepository.findById(materialDTO.getBomId())
                 .orElseThrow(() -> new EntityNotFoundException("BOM을 찾을 수 없습니다."));
 

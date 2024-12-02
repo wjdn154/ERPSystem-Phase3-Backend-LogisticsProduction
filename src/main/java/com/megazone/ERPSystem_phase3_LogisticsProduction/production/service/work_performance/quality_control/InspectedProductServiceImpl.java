@@ -31,6 +31,7 @@ public class InspectedProductServiceImpl implements InspectedProductService{
 
     //리스트 조회
     @Override
+    @Transactional(readOnly = true)
     public List<InspectedProductListDTO> findAllInspectedProduct() {
 
         return inspectedProductRepository.findAll().stream()
@@ -50,6 +51,7 @@ public class InspectedProductServiceImpl implements InspectedProductService{
 
     //상세 조회
     @Override
+    @Transactional(readOnly = true)
     public Optional<InspectedProductDetailDTO> findInspectedProduct(Long id) {
 
         //아이디 존재 여부 확인

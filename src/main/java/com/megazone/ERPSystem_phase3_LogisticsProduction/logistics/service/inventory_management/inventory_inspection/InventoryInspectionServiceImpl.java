@@ -34,6 +34,7 @@ public class InventoryInspectionServiceImpl implements InventoryInspectionServic
     private final EmployeeRepository employeeRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<InventoryInspectionResponseListDTO> getInspectionsByDateRange(LocalDate startDate, LocalDate endDate) {
         List<InventoryInspection> inspections = inspectionRepository.findInspectionsByDateRange(startDate, endDate);
 
@@ -43,6 +44,7 @@ public class InventoryInspectionServiceImpl implements InventoryInspectionServic
     }
 
     @Override
+    @Transactional(readOnly = true)
     public InventoryInspectionResponseDTO getInspectionById(Long id) {
         InventoryInspection inspection = inspectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("해당 ID의 재고 실사를 찾을 수 없습니다. ID: " + id));

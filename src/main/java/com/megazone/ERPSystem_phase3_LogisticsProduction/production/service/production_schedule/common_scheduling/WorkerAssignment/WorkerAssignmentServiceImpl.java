@@ -13,9 +13,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.r
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.production_schedule.common_scheduling.worker_assignment.WorkerAssignmentRepository;
 import com.querydsl.core.Tuple;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -36,6 +36,7 @@ public class WorkerAssignmentServiceImpl implements WorkerAssignmentService {
 
     // 전체 작업장별 배정된 인원수 조회
     @Override
+    @Transactional(readOnly = true)
     public List<WorkerAssignmentCountDTO> getAllWorkcentersWorkerCount() {
         List<Tuple> result = workerAssignmentRepository.findWorkerCountByWorkcenter();
 
@@ -51,6 +52,7 @@ public class WorkerAssignmentServiceImpl implements WorkerAssignmentService {
 
     // 특정 작업장 배정된 작업자 명단 조회
     @Override
+    @Transactional(readOnly = true)
     public List<WorkerAssignmentDTO> getWorkersByWorkcenterCode(String workcenterCode) {
         List<WorkerAssignment> assignments = workerAssignmentRepository.findAllByWorkcenterCode(workcenterCode);
         return assignments.stream().map(this::convertToDTO).collect(Collectors.toList());
@@ -65,6 +67,7 @@ public class WorkerAssignmentServiceImpl implements WorkerAssignmentService {
 
     // 특정 날짜에 동일 작업자가 이미 배정된지 확인 (중복 방지)
     @Override
+    @Transactional(readOnly = true)
     public boolean isWorkerAlreadyAssigned(Long workerId, LocalDate date) {
         return workerAssignmentRepository.existsByWorkerIdAndAssignmentDate(workerId, date);
     }
@@ -77,6 +80,7 @@ public class WorkerAssignmentServiceImpl implements WorkerAssignmentService {
 
     // 오늘의 작업장별 배정인원 상세명단과 인원수 조회
     @Override
+    @Transactional(readOnly = true)
     public WorkerAssignmentSummaryDTO getTodayWorkerAssignmentsSummary(LocalDate currentDate, boolean includeShiftType, Long shiftTypeId) {
 
         List<WorkerAssignment> assignments;
@@ -101,6 +105,7 @@ public class WorkerAssignmentServiceImpl implements WorkerAssignmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<WorkerAssignmentDTO> getWorkerAssignmentsByDateRange(LocalDate startOfMonth, LocalDate endOfMonth) {
         // 날짜 범위 내의 작업자 배정 목록 조회
         List<WorkerAssignment> assignments = workerAssignmentRepository.findByAssignmentDateBetween(startOfMonth, endOfMonth);
@@ -110,6 +115,7 @@ public class WorkerAssignmentServiceImpl implements WorkerAssignmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public WorkerAssignmentSummaryDTO getWorkerAssignmentsByProductionOrder(Long productionOrderId, boolean includeShiftType, Long shiftTypeId) {
         List<WorkerAssignment> assignments;
 
@@ -137,6 +143,7 @@ public class WorkerAssignmentServiceImpl implements WorkerAssignmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<WorkerAssignmentDTO> getWorkerAssignmentsByWorker(Long workerId, boolean includeShiftType, Long shiftTypeId) {
 
         List<WorkerAssignment> assignments;
@@ -157,7 +164,9 @@ public class WorkerAssignmentServiceImpl implements WorkerAssignmentService {
 
 
     // 반복되는 공통작업을 처리하는 메서드
-    private List<WorkerAssignmentDTO> getWorkerAssignments(
+    @Override
+    @Transactional(readOnly = true)
+    public List<WorkerAssignmentDTO> getWorkerAssignments(
             LocalDate date, boolean includeShiftType, Long shiftTypeId) {
         List<WorkerAssignment> assignments;
 
@@ -182,6 +191,7 @@ public class WorkerAssignmentServiceImpl implements WorkerAssignmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<WorkerAssignmentDTO> getWorkerAssignmentsByDates(LocalDate startDate, LocalDate endDate, boolean includeShiftType, Long shiftTypeId, String factoryCode, String workcenterCode) {
         List<WorkerAssignment> assignments;
 

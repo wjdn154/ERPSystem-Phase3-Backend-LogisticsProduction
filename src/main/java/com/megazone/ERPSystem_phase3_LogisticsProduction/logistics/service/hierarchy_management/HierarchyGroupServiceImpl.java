@@ -5,9 +5,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.warehou
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.warehouse_management.hierarchy_group.dto.test.*;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.warehouse_management.warehouse.Warehouse;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.basic_information_management.hierarchy_group.HierarchyGroupRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -68,6 +68,7 @@ public class HierarchyGroupServiceImpl implements HierarchyGroupService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<HierarchyGroupResponseTreeDTO> getHierarchyGroupTree() {
         List<HierarchyGroup> groups = hierarchyGroupRepository.findByParentGroupIsNull();
         return groups.stream()
@@ -76,6 +77,7 @@ public class HierarchyGroupServiceImpl implements HierarchyGroupService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<HierarchyGroupWarehouseResponseDTO> getWarehousesByHierarchyGroup(Long groupId) {
         List<Warehouse> warehouses = hierarchyGroupRepository.findWarehousesByHierarchyGroupId(groupId);
         return warehouses.stream()

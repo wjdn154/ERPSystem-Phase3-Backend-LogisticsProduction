@@ -10,4 +10,7 @@ public interface ShiftTypeService {
     ShiftTypeDTO createShiftType(ShiftTypeDTO shiftTypeDTO);
     ShiftTypeDTO updateShiftType(ShiftTypeDTO shiftTypeDTO);
     void deleteShiftType(Long id);
+
+    // 교대 유형이 사용 중인지 확인하는 메서드
+    boolean shiftTypeInUse(Long id);
 }

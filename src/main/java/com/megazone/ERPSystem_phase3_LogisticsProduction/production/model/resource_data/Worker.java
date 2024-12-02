@@ -46,7 +46,7 @@ public class Worker {
     @OneToMany(mappedBy = "worker" , fetch = FetchType.LAZY)
     private List<WorkerAssignment> workerAssignments;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id")
-    private Company company;                 //회사 테이블(회사 아이디)
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "company_id")
+//    private Company company;                 //회사 테이블(회사 아이디)
 }

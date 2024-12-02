@@ -9,6 +9,12 @@ import java.util.List;
 public interface ProductionRequestService {
     ProductionRequestDetailDTO saveManualProductionRequest(ProductionRequestDetailDTO dto);
 
+    // 중복 방지 검증
+    boolean isDuplicateRequest(ProductionRequestDetailDTO dto);
+
+    // 연관 엔티티 검증
+    void validateRelatedEntities(ProductionRequestDetailDTO dto);
+
     ProductionRequestDetailDTO getProductionRequestById(Long id);
 
     List<ProductionRequestListDTO> getAllProductionRequests();
