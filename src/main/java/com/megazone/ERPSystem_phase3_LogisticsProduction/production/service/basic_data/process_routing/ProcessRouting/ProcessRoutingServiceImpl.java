@@ -31,9 +31,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.b
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.basic_data.process_routing.PrcessRouting.ProcessRoutingRepository;
 
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.basic_data.process_routing.RoutingStep.RoutingStepRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -169,6 +169,7 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
      */
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProcessDetailsDTO> searchProcessDetails() {
         List<ProcessDetails> processDetailsList = processDetailsRepository.findAll();
         return processDetailsList.stream()
@@ -177,6 +178,7 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductDto> searchProducts(String keyword) {
         List<Product> productList = productRepository.findByCodeContainingOrNameContaining(keyword, keyword);
         if (productList.isEmpty()) {
@@ -193,7 +195,9 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
      * @param processDetailsDTO 조회할 ProcessDetails의 정보를 담은 DTO
      * @return ProcessDetails의 ID
      */
-    private Long getProcessIdByCodeOrName(ProcessDetailsDTO processDetailsDTO) {
+    @Override
+    @Transactional(readOnly = true)
+    public Long getProcessIdByCodeOrName(ProcessDetailsDTO processDetailsDTO) {
         if (processDetailsDTO == null) {
             throw new IllegalArgumentException("생산공정 데이터가 비어 있습니다.");
         }
@@ -206,6 +210,8 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
     }
 
 
+    @Override
+    @Transactional(readOnly = true)
     public ProcessDetailsDTO getProcessDetailsById(Long id) {
         return processDetailsRepository.findById(id)
                 .map(this::convertProcessDetailsToDTO)
@@ -213,6 +219,7 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProcessRoutingDetailDTO getProcessRoutingById(Long id) {
 
         ProcessRouting processRouting = processRoutingRepository.findById(id)
@@ -258,7 +265,9 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
      * @param productDetailDto 조회할 Product의 정보를 담은 DTO
      * @return Product 엔티티
      */
-    private Product getProductByCodeOrName(ProductDetailDto productDetailDto) {
+    @Override
+    @Transactional(readOnly = true)
+    public Product getProductByCodeOrName(ProductDetailDto productDetailDto) {
         // 우선 코드로 조회, 없으면 이름으로 조회
         return productRepository.findByCode(productDetailDto.getCode())
                 .or(() -> productRepository.findByName(productDetailDto.getName()))
@@ -267,7 +276,9 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
     }
 
 
-    private ProductDto getProductById(Long id) {
+    @Override
+    @Transactional(readOnly = true)
+    public ProductDto getProductById(Long id) {
         return productRepository.findById(id)
                 .map(this::convertProductToDTO)
                 .orElseThrow(() -> new IllegalArgumentException("해당 ID의 제품을 찾을 수 없습니다."));
@@ -484,7 +495,9 @@ public class ProcessRoutingServiceImpl implements ProcessRoutingService {
         return processRouting;
     }
 
-    private RoutingStep convertDTOToRoutingStep(RoutingStepDTO dto, ProcessRouting processRouting) {
+    @Override
+    @Transactional(readOnly = true)
+    public RoutingStep convertDTOToRoutingStep(RoutingStepDTO dto, ProcessRouting processRouting) {
         Long processId = dto.getId().getProcessId(); // id에서 processId 추출
 
         ProcessDetails processDetails = processDetailsRepository.findById(processId)

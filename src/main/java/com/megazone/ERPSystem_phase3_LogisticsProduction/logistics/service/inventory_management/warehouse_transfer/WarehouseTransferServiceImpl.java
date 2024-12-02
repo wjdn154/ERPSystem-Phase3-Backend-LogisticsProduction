@@ -36,11 +36,13 @@ public class WarehouseTransferServiceImpl implements WarehouseTransferService {
     private final ProductRepository productRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<WarehouseTransferResponseListDTO> findTransfers(LocalDate startDate, LocalDate endDate) {
         return warehouseTransferRepository.findTransfers(startDate, endDate);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<WarehouseTransferResponseDTO> getTransferDetail(Long transferId) {
         return warehouseTransferRepository.findTransferDetailById(transferId);
     }

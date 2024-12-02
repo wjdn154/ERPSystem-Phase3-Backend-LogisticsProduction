@@ -18,7 +18,6 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.p
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.resource_data.worker.WorkerRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.service.production_schedule.common_scheduling.ProductionOrder.ProductionOrderService;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.process_routing.dto.RoutingStepDetailDTO;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -202,6 +202,7 @@ public class MpsServiceImpl implements MpsService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<searchMpsDTO> searchMps(LocalDate date) {
         List<Mps> mpsList = mpsRepository.searchMps(date);
 
@@ -266,6 +267,7 @@ public class MpsServiceImpl implements MpsService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MpsDTO getMpsById(Long id) {
         Mps mps = mpsRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("해당 MPS를 찾을 수 없습니다. :" + id));
@@ -352,7 +354,9 @@ public class MpsServiceImpl implements MpsService {
 
 // ================= convert methods ===============
 
-    private MpsDTO convertToDto(Mps mps) {
+    @Override
+    @Transactional(readOnly = true)
+    public MpsDTO convertToDto(Mps mps) {
 
         MpsDTO mpsDto = MpsDTO.builder()
                 .id(mps.getId())
@@ -377,7 +381,9 @@ public class MpsServiceImpl implements MpsService {
         return mpsDto;
     }
 
-    private Mps convertToEntity(MpsDTO dto) {
+    @Override
+    @Transactional(readOnly = true)
+    public Mps convertToEntity(MpsDTO dto) {
             // Product 조회
             Product product = productRepository.findById(dto.getProductId())
                     .orElseThrow(() -> new EntityNotFoundException("해당 제품을 찾을 수 없습니다."));

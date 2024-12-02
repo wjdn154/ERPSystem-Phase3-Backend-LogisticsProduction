@@ -19,10 +19,10 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.basic_data.Workcenter.WorkcenterRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.basic_data.process_routing.ProcessDetails.ProcessDetailsRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -41,6 +41,7 @@ public class ProcessDetailsServiceImpl implements ProcessDetailsService {
     private final NotificationService notificationService;
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProcessDetailsDTO> getAllProcessDetails() {
         List<ProcessDetails> processDetailsList = processDetailsRepository.findAll();
 
@@ -52,6 +53,7 @@ public class ProcessDetailsServiceImpl implements ProcessDetailsService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProcessDetailsDTO> findByNameContaining(String name) {
         List<ProcessDetails> processes = processDetailsRepository.findByNameContaining(name);
         return processes.stream()
@@ -59,6 +61,7 @@ public class ProcessDetailsServiceImpl implements ProcessDetailsService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<ProcessDetailsDTO> getProcessDetailsByCode(String code) {
         ProcessDetails processDetails = processDetailsRepository.findByCode(code)
                 .orElseThrow(() -> new EntityNotFoundException("해당 생산공정 " + code + "을 찾을 수 없습니다."));

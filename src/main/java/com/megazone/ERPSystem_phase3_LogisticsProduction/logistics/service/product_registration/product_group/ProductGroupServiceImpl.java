@@ -4,9 +4,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.dto.ProductGroupDto;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product_group.ProductGroupRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +26,7 @@ public class ProductGroupServiceImpl implements ProductGroupService {
      * @return 해당 회사의 품목 그룹 리스트
      */
     @Override
+    @Transactional(readOnly = true)
     public List<ProductGroupDto> findAllProductGroups(String searchTerm) {
         return productGroupRepository.findProductGroupsBySearchTerm(searchTerm)
                 .stream()

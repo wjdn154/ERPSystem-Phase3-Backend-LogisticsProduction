@@ -28,13 +28,12 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.ba
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.CurrencyRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.sales_management.quotation.QuotationRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -57,6 +56,7 @@ public class QuotationServiceImpl implements QuotationService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public List<QuotationResponseDto> findAllQuotations(SearchDTO dto) {
         List<Quotation> quotations;
 
@@ -137,6 +137,7 @@ public class QuotationServiceImpl implements QuotationService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public Optional<QuotationResponseDetailDto> findQuotationDetailById(Long id) {
         return quotationRepository.findById(id)
                 .map(this::toDetailDto);
@@ -244,7 +245,9 @@ public class QuotationServiceImpl implements QuotationService {
         return getQuotation(dto, quotation);
     }
 
-    private Quotation getQuotation(QuotationCreateDto dto, Quotation quotation) {
+    @Override
+    @Transactional(readOnly = true)
+    public Quotation getQuotation(QuotationCreateDto dto, Quotation quotation) {
 
         dto.getItems().forEach(item -> {
             if (item.getProductId() == null) {

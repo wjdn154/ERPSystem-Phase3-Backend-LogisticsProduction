@@ -24,9 +24,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.r
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.resource_data.MaterialHazardous.MaterialHazardousRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.resource_data.materialData.MaterialDataRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.resource_data.materialProduct.MaterialProductRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -50,6 +50,7 @@ public class MaterialDataServiceImpl implements MaterialDataService{
 
     //자재 리스트 조회
     @Override
+    @Transactional(readOnly = true)
     public List<ListMaterialDataDTO> findAllMaterial() {
 
         return materialDataRepository.findAllByOrderByIdDesc().stream()
@@ -68,6 +69,7 @@ public class MaterialDataServiceImpl implements MaterialDataService{
 
     //자재 상세 조회
     @Override
+    @Transactional(readOnly = true)
     public Optional<MaterialDataShowDTO> findMaterialById(Long id) {
 
         MaterialData materialData = materialDataRepository.findById(id)
@@ -204,6 +206,7 @@ public class MaterialDataServiceImpl implements MaterialDataService{
 
     //해당 자재의 유해물질 리스트 조회
     @Override
+    @Transactional(readOnly = true)
     public ListHazardousMaterialDTO findAllHazardousMaterialById(Long id) {
         
         //자재 아이디로 자재 조회
@@ -321,6 +324,7 @@ public class MaterialDataServiceImpl implements MaterialDataService{
 
     //해당 자재의 품목 리스트 조회
     @Override
+    @Transactional(readOnly = true)
     public ListProductMaterialDTO findAllProductMaterialById(Long id) {
 
         //자재 아이디로 자재 조회

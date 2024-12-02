@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -163,6 +162,7 @@ public class EquipmentDataServiceImpl implements EquipmentDataService {
 
     //설비 리스트 조회
     @Override
+    @Transactional(readOnly = true)
     public List<ListEquipmentDataDTO> findAllEquipmentDataDetails() {
 
         return equipmentDataRepository.findAllByOrderByPurchaseDateDesc().stream()
@@ -182,6 +182,7 @@ public class EquipmentDataServiceImpl implements EquipmentDataService {
 
     //설비 상세 조회
     @Override
+    @Transactional(readOnly = true)
     public Optional<EquipmentDataShowDTO> findEquipmentDataDetailById(Long id) {
 
         //엔티티 조회
@@ -250,7 +251,9 @@ public class EquipmentDataServiceImpl implements EquipmentDataService {
     }
 
     //equipmentDataDto를 엔티티로 변환하는 메서드
-    private EquipmentData equipmentToEntity(EquipmentDataDTO dto){
+    @Override
+    @Transactional(readOnly = true)
+    public EquipmentData equipmentToEntity(EquipmentDataDTO dto){
         EquipmentData equipmentData = new EquipmentData();
         equipmentData.setEquipmentNum(dto.getEquipmentNum());
         equipmentData.setEquipmentName(dto.getEquipmentName());

@@ -5,6 +5,7 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.produc
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.production_schedule.common_scheduling.shift_type.ShiftTypeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,6 +17,7 @@ public class ShiftTypeServiceImpl implements ShiftTypeService {
     private final ShiftTypeRepository shiftTypeRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<ShiftTypeDTO> getAllShiftTypes() {
         // 모든 ShiftType 엔티티를 조회한 후 DTO로 변환하여 반환
         return shiftTypeRepository.findAll().stream()
@@ -24,6 +26,7 @@ public class ShiftTypeServiceImpl implements ShiftTypeService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ShiftTypeDTO getShiftTypeById(Long id) {
         // ID로 ShiftType 엔티티를 조회하고 없으면 예외를 던짐
         ShiftType shiftType = shiftTypeRepository.findById(id)
@@ -89,7 +92,9 @@ public class ShiftTypeServiceImpl implements ShiftTypeService {
     }
 
     // 교대 유형이 사용 중인지 확인하는 메서드
-    private boolean shiftTypeInUse(Long id) {
+    @Override
+    @Transactional(readOnly = true)
+    public boolean shiftTypeInUse(Long id) {
         Boolean isUsed = shiftTypeRepository.findIsUsedById(id);
         return isUsed != null && isUsed; // 사용 중이면 true, 아니면 false
     }

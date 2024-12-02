@@ -4,9 +4,9 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.ba
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.resource_data.HazardousMaterial;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.resource_data.dto.HazardousMaterialDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.resource_data.HazardousMaterial.HazardousMaterialRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +22,7 @@ public class HazardousMaterialServiceImpl implements HazardousMaterialService{
 
     //유해물질 리스트 조회
     @Override
+    @Transactional(readOnly = true)
     public List<HazardousMaterialDTO> findAllHazardousMaterial() {
 
         return hazardousMaterialRepository.findAll().stream()

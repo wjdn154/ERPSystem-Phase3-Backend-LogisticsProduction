@@ -30,13 +30,12 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.ba
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.CurrencyRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.purchase_order.PurchaseOrderRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -60,6 +59,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService{
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public List<PurchaseOrderResponseDto> findAllPurchaseOrders(SearchDTO dto) {
 
         List<PurchaseOrder> purchaseOrders;
@@ -144,6 +144,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService{
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public Optional<PurchaseOrderResponseDetailDto> findPurchaseOrderDetailById(Long id) {
         
         return purchaseOrderRepository.findById(id)
@@ -246,7 +247,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService{
 
     /** 발주서 직접 등록 관련 메서드 **/
     // 발주서 등록 DTO -> Entity 변환 메소드
-    private PurchaseOrder toEntity(PurchaseOrderCreateDto dto) {
+    @Override
+    @Transactional(readOnly = true)
+    public PurchaseOrder toEntity(PurchaseOrderCreateDto dto) {
         PurchaseOrder newOrder = PurchaseOrder.builder()
                 .client(clientRepository.findById(dto.getClientId())
                         .orElseThrow(() -> new RuntimeException("거래처 정보를 찾을 수 없습니다.")))
@@ -266,7 +269,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService{
         return getPurchaseOrder(dto, newOrder);
     }
 
-    private PurchaseOrder getPurchaseOrder(PurchaseOrderCreateDto dto, PurchaseOrder newOrder) {
+    @Override
+    @Transactional(readOnly = true)
+    public PurchaseOrder getPurchaseOrder(PurchaseOrderCreateDto dto, PurchaseOrder newOrder) {
 
         dto.getItems().forEach(item -> {
             Product product = productRepository.findById(item.getProductId())

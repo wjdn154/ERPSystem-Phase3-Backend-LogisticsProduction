@@ -1,4 +1,4 @@
-package com.megazone.ERPSystem_phase3_LogisticsProduction.financial;
+package com.megazone.ERPSystem_phase3_LogisticsProduction.common.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;

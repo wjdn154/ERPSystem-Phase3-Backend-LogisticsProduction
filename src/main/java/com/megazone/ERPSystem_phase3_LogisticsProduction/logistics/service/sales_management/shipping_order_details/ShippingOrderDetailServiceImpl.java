@@ -19,6 +19,7 @@ public class ShippingOrderDetailServiceImpl implements ShippingOrderDetailServic
     private final ShippingOrderDetailRepository shippingOrderDetailRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<ShippingOrderDetailResponseDTO> getShippingOrderDetailsByDateRange(LocalDate startDate, LocalDate endDate) {
         List<ShippingOrderDetail> details = shippingOrderDetailRepository.findDetailsByOrderDateRange(startDate, endDate);
 

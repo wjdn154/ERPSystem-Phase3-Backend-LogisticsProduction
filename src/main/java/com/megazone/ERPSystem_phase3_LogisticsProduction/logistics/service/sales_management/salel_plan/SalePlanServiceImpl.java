@@ -24,13 +24,12 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.ba
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.CurrencyRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.sales_management.sale_plan.SalePlanRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -59,6 +58,7 @@ SalePlanServiceImpl implements SalePlanService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public List<SalePlanResponseDto> findAllSalePlans(SearchDTO dto) {
 
         List<SalePlan> salePlans;
@@ -134,6 +134,8 @@ SalePlanServiceImpl implements SalePlanService {
      * @param id
      * @return
      */
+    @Override
+    @Transactional(readOnly = true)
     public Optional<SalePlanResponseDetailDto> findSalePlanDetailById(Long id) {
         return salePlanRepository.findById(id)
                 .map(this::toDetailDto);
@@ -210,7 +212,9 @@ SalePlanServiceImpl implements SalePlanService {
 
     /** 판매 계획 등록 관련 메서드 **/
     // 판매 계획 등록 DTO -> Entity 변환 메소드
-    private SalePlan toEntity(SalePlanCreateDto dto) {
+    @Override
+    @Transactional(readOnly = true)
+    public SalePlan toEntity(SalePlanCreateDto dto) {
         SalePlan salePlan = SalePlan.builder()
                 .client(clientRepository.findById(dto.getClientId())
                         .orElseThrow(() -> new RuntimeException("거래처 정보를 찾을 수 없습니다.")))
@@ -226,7 +230,9 @@ SalePlanServiceImpl implements SalePlanService {
         return getSalePlan(dto, salePlan);
     }
 
-    private SalePlan getSalePlan(SalePlanCreateDto dto, SalePlan salePlan) {
+    @Override
+    @Transactional(readOnly = true)
+    public SalePlan getSalePlan(SalePlanCreateDto dto, SalePlan salePlan) {
 
         dto.getItems().forEach(item -> {
             if (item.getProductId() == null) {

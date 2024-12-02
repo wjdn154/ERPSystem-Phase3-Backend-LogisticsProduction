@@ -27,7 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -65,7 +64,9 @@ public class ProductionRequestServiceImpl implements ProductionRequestService {
     }
 
     // 중복 방지 검증
-    private boolean isDuplicateRequest(ProductionRequestDetailDTO dto) {
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isDuplicateRequest(ProductionRequestDetailDTO dto) {
         List<ProductionRequest> existingRequests =
                 productionRequestsRepository.findByProductIdAndClientId(dto.getProductId(), dto.getClientId());
 
@@ -88,7 +89,9 @@ public class ProductionRequestServiceImpl implements ProductionRequestService {
     }
 
     // 연관 엔티티 검증
-    private void validateRelatedEntities(ProductionRequestDetailDTO dto) {
+    @Override
+    @Transactional(readOnly = true)
+    public void validateRelatedEntities(ProductionRequestDetailDTO dto) {
         if (!clientRepository.existsById(dto.getClientId())) {
             throw new EntityNotFoundException("해당 클라이언트를 찾을 수 없습니다.");
         }
@@ -104,6 +107,7 @@ public class ProductionRequestServiceImpl implements ProductionRequestService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProductionRequestDetailDTO getProductionRequestById(Long id) {
         ProductionRequest entity = productionRequestsRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("생산 요청을 찾을 수 없습니다."));
@@ -111,6 +115,7 @@ public class ProductionRequestServiceImpl implements ProductionRequestService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductionRequestListDTO> getAllProductionRequests() {
         return productionRequestsRepository.findAll().stream()
                 .map(ProductionRequestListDTO::fromEntity)

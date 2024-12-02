@@ -44,11 +44,13 @@ public class WarehouseServiceImpl implements WarehouseService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public List<WarehouseResponseListDTO> getWarehouseList() {
         return warehouseRepository.findWarehouseList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public WarehouseResponseTestDTO getWarehouseDetail(Long warehouseId) {
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 창고를 찾을 수 없습니다."));
@@ -141,7 +143,9 @@ public class WarehouseServiceImpl implements WarehouseService {
     }
 
     // 연관된 테이블의 문제를 확인하고 메시지를 생성하는 메서드
-    private String getRelatedEntitiesIssues(Warehouse warehouse) {
+    @Override
+    @Transactional(readOnly = true)
+    public String getRelatedEntitiesIssues(Warehouse warehouse) {
         StringBuilder issues = new StringBuilder();
 
         // 각 테이블에서 창고를 참조하는 데이터가 있는지 확인

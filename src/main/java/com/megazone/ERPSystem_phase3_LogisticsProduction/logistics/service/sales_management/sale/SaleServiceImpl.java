@@ -28,13 +28,12 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.ba
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.purchase_management.CurrencyRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.sales_management.sale.SaleRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -59,6 +58,7 @@ public class SaleServiceImpl implements SaleService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public List<SaleResponseDto> findAllSales(SearchDTO dto) {
         List<Sale> sales;
 
@@ -134,6 +134,7 @@ public class SaleServiceImpl implements SaleService {
      * @return
      */
     @Override
+    @Transactional(readOnly = true)
     public Optional<SaleResponseDetailDto> findSaleDetailById(Long id) {
         return saleRepository.findById(id)
                 .map(this::toDetailDto);
@@ -223,7 +224,9 @@ public class SaleServiceImpl implements SaleService {
 
     /** 판매서 등록 관련 메서드 **/
     // 판매서 등록 DTO -> Entity 변환 메소드
-    private Sale toEntity(SaleCreateDto dto) {
+    @Override
+    @Transactional(readOnly = true)
+    public Sale toEntity(SaleCreateDto dto) {
         Sale sale = Sale.builder()
                 .client(clientRepository.findById(dto.getClientId())
                         .orElseThrow(() -> new RuntimeException("거래처 정보를 찾을 수 없습니다.")))
@@ -242,7 +245,9 @@ public class SaleServiceImpl implements SaleService {
         return getSale(dto, sale);
     }
 
-    private Sale getSale(SaleCreateDto dto, Sale sale) {
+    @Override
+    @Transactional(readOnly = true)
+    public Sale getSale(SaleCreateDto dto, Sale sale) {
         if (sale.getCurrency() == null) {
             throw new RuntimeException("통화 정보가 설정되지 않았습니다.");
         }

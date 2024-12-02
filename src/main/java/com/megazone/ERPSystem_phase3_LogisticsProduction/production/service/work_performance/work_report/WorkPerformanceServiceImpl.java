@@ -31,6 +31,7 @@ public class WorkPerformanceServiceImpl implements WorkPerformanceService{
 
     //모든 작업 실적 리스트 조회
     @Override
+    @Transactional(readOnly = true)
     public List<WorkPerformanceListDTO> findAllWorkPerformance() {
 
         return workPerformanceRepository.findAllByOrderByIdDesc().stream()
@@ -47,6 +48,7 @@ public class WorkPerformanceServiceImpl implements WorkPerformanceService{
 
     //작업 실적 리스트 상세 조회
     @Override
+    @Transactional(readOnly = true)
     public Optional<WorkPerformanceDetailDTO> findWorkPerformanceById(Long id) {
 
         WorkPerformance workPerformance = workPerformanceRepository.findById(id)
@@ -91,11 +93,13 @@ public class WorkPerformanceServiceImpl implements WorkPerformanceService{
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<DailyReportDTO> dailyReport(DailyAndMonthlyReportSearchDTO dto) {
         return workPerformanceRepository.dailyReport(dto);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<MonthlyReportDTO> monthlyReport(DailyAndMonthlyReportSearchDTO dto) {
         return workPerformanceRepository.monthlyReport(dto);
     }
@@ -165,6 +169,7 @@ public class WorkPerformanceServiceImpl implements WorkPerformanceService{
     }
 
     @Override
+    @Transactional(readOnly = true)
     public BigDecimal workPerformanceCalculator() {
         return workPerformanceRepository.findAll().stream().map(WorkPerformance::getAcceptableQuantity).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
