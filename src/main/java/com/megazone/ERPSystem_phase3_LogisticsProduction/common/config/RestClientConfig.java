@@ -30,14 +30,14 @@ public class RestClientConfig {
     @Bean
     public RestClient notificationServiceClient() {
         return RestClient.builder()
-                .baseUrl("http://localhost:8082/api/notifications/")
+                .baseUrl(secretManagerConfig.getNotificationServiceUrl())
                 .build();
     }
 
     @Bean
-    public RestClient integratedServiceClient() {
+    public RestClient commonServiceClient() {
         return RestClient.builder()
-                .baseUrl("http://localhost:8082/api/integrated/")
+                .baseUrl(secretManagerConfig.getCommonServiceUrl())
                 .build();
     }
 }

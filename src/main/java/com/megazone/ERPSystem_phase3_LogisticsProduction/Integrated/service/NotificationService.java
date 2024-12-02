@@ -12,13 +12,10 @@ import org.springframework.web.client.RestClient;
 public class NotificationService {
 
     private final RestClient notificationServiceClient;
-    private final String baseUrl = "http://localhost:8082/api/notifications/";
 
 
     public void createAndSend(UserNotificationCreateAndSendDTO requestData) {
         String token = (String) SecurityContextHolder.getContext().getAuthentication().getCredentials();
-        System.out.println("알림 api 호출 토큰 : " + token);
-
         try {
             String responseMessage =  notificationServiceClient.post()
                     .uri("createAndSend")
@@ -26,7 +23,6 @@ public class NotificationService {
                     .body(requestData)
                     .retrieve()
                     .body(String.class);
-            System.out.println("최종 요청 URL: " + baseUrl + "createAndSend");
             if(responseMessage == null) {
                 throw new RuntimeException("알림 서비스 null");
             }
