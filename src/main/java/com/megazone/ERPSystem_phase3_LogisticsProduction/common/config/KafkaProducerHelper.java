@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
 @RequiredArgsConstructor
 public class KafkaProducerHelper {
@@ -16,5 +18,22 @@ public class KafkaProducerHelper {
                     System.err.println("Kafka 메시지 전송 실패: " + ex.getMessage());
                     return null;
                 });
+    }
+
+    public void sagaSendSuccessResponse(String requestId, String groupId) {
+        kafkaTemplate.send("saga-responses", Map.of(
+                "requestId", requestId,
+                "serviceGroup", groupId,
+                "status", "SUCCESS"
+        ));
+    }
+
+    public void sagaSendErrorResponse(String requestId, String groupId, String error) {
+        kafkaTemplate.send("saga-responses", Map.of(
+                "requestId", requestId,
+                "serviceGroup", groupId,
+                "status", "FAILED",
+                "error", error
+        ));
     }
 }
