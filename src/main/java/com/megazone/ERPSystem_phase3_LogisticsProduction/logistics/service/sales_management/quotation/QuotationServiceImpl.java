@@ -276,7 +276,7 @@ public class QuotationServiceImpl implements QuotationService {
 
             QuotationDetail detail = QuotationDetail.builder()
                     .product(product)
-                    .quantity(item.getQuantity())
+                    .quantity(item.getQuantity() != null ? item.getQuantity() : 0)
                     .supplyPrice(supplyPrice)
                     .localAmount(localAmount)
                     .vat(vat)

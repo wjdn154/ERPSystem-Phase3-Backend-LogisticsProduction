@@ -6,7 +6,6 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.common.config.database.
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.cache.spi.entry.CacheEntry;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
@@ -44,7 +43,7 @@ public class SecretManagerConfig {
 //                getCachedSecret("omz-env-secrets-backend", "RDS_LOGISTICS_PRODUCTION_WRITER_DB_URL"),
 //                getCachedSecret("omz-env-secrets-backend", "RDS_DB_USER"),
 //                getCachedSecret("omz-env-secrets-backend", "RDS_DB_PASSWORD")
-                "jdbc:mysql://localhost:3308/PUBLIC?useSSL=false&serverTimezone=Asia/Seoul", "root", "1234"
+                "jdbc:mysql://localhost:3306/PUBLIC?useSSL=false&serverTimezone=Asia/Seoul", "root", "1234"
         );
     }
 
@@ -53,7 +52,7 @@ public class SecretManagerConfig {
 //                getCachedSecret("omz-env-secrets-backend", "RDS_LOGISTICS_PRODUCTION_READER_DB_URL"),
 //                getCachedSecret("omz-env-secrets-backend", "RDS_DB_USER"),
 //                getCachedSecret("omz-env-secrets-backend", "RDS_DB_PASSWORD")
-                "jdbc:mysql://localhost:3308/PUBLIC?useSSL=false&serverTimezone=Asia/Seoul", "root", "1234"
+                "jdbc:mysql://localhost:3306/PUBLIC?useSSL=false&serverTimezone=Asia/Seoul", "root", "1234"
         );
     }
 
