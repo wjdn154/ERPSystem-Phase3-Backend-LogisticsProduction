@@ -79,8 +79,8 @@ spring:
         - classpath:initial-database/logistics/purchase_management/purchase.sql
 
   kafka:
-    bootstrap-servers: kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092
-#    bootstrap-servers: localhost:9092
+#    bootstrap-servers: kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092
+    bootstrap-servers: localhost:9092
     properties:
       security.protocol: PLAINTEXT
     consumer:
