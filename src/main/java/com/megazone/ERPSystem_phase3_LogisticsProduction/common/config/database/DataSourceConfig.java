@@ -37,6 +37,10 @@ public class DataSourceConfig {
         System.out.println("credentials.getUrl() = " + credentials.getUrl());
         dataSource.setUsername(credentials.getUsername());
         dataSource.setPassword(credentials.getPassword());
+        dataSource.setMaximumPoolSize(50);
+        dataSource.setMinimumIdle(5);
+        dataSource.setIdleTimeout(30000);
+        dataSource.setMaxLifetime(1800000);
         return dataSource;
     }
 

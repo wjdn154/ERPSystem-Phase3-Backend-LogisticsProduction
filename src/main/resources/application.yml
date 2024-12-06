@@ -4,12 +4,6 @@ spring:
   application:
     name: ERPSystem-phase3-LogisticsProduction
   datasource:
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-      idle-timeout: 30000 # 유휴 연결을 30초 후 종료
-      max-lifetime: 1800000 # 연결 수명을 30분으로 제한
-      leak-detection-threshold: 2000 # 2초 이상 반환되지 않는 연결 로그 출력
     writer:
       driver-class-name: com.mysql.cj.jdbc.Driver
     reader:
@@ -81,6 +75,7 @@ spring:
   kafka:
     bootstrap-servers: kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092
 #    bootstrap-servers: localhost:9092
+#    bootstrap-servers: 218.235.89.82:9092
     properties:
       security.protocol: PLAINTEXT
     consumer:
