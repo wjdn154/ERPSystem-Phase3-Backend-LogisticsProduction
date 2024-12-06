@@ -2,6 +2,7 @@ package com.megazone.ERPSystem_phase3_LogisticsProduction.hr.kafka.listener;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.common.config.KafkaProducerHelper;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.common.config.multi_tenant.TenantContext;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.VatTypeShowDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.dto.EmployeeShowToDTO;
@@ -22,12 +23,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class EmployeeListener {
     private final EmployeeService employeeService;
+    private final KafkaProducerHelper kafkaProducerHelper;
     private final ObjectMapper objectMapper;
     private final ConcurrentHashMap<String, CompletableFuture<EmployeeOneDTO>> getEmployeeOneResponseFutures; // 사원 단건 조회 event 이력
     private final ConcurrentHashMap<String, CompletableFuture<List<EmployeeOneDTO>>> getEmployeeListResponseFutures; // 사원 리스트 조회 event 이력
     private final ConcurrentHashMap<String, CompletableFuture<List<EmployeeAttendanceDTO>>> getEmployeeAttendanceListResponseFutures; // 사원 근태리스트 조회 event 이력
 
-    @KafkaListener(topics = "employee-update", groupId = "employee-service-group")
+    @KafkaListener(topics = "employee-update", groupId = "logistics-service-group")
     public void handleEmployeeUpdateResponse(Map<String, Object> response) {
         String requestId = (String) response.get("requestId");
 
@@ -37,12 +39,12 @@ public class EmployeeListener {
             if (response.containsKey("data")) {
                 EmployeeShowToDTO employeeShowToDTO = objectMapper.convertValue(response.get("data"), EmployeeShowToDTO.class);
                 employeeService.updateEmployee(employeeShowToDTO);
+                kafkaProducerHelper.sagaSendSuccessResponse(requestId,"logistics-service-group");
             } else if (response.containsKey("error")) {
-//                String error = (String) response.get("error");
-                // 에러로직 필요?
+                kafkaProducerHelper.sagaSendErrorResponse(requestId,"logistics-service-group",response.get("error").toString());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            kafkaProducerHelper.sagaSendErrorResponse(requestId,"logistics-service-group",e.getMessage());
         }
         finally {
             TenantContext.setCurrentTenant("PUBLIC");
@@ -130,4 +132,5 @@ public class EmployeeListener {
             }
         }
     }
+
 }

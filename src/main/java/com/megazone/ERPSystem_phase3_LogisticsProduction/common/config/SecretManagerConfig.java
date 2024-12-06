@@ -6,7 +6,6 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.common.config.database.
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.cache.spi.entry.CacheEntry;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
