@@ -4,10 +4,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.common.config.KafkaProducerHelper;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.common.config.multi_tenant.TenantContext;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.VatTypeShowDTO;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.dto.EmployeeDataDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.dto.EmployeeShowToDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.EmployeeService;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.EmployeeServiceImpl;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.dto.EmployeeAttendanceDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.dto.EmployeeOneDTO;
 import lombok.RequiredArgsConstructor;
@@ -37,8 +36,8 @@ public class EmployeeListener {
             TenantContext.setCurrentTenant(response.get("tenant").toString());
 
             if (response.containsKey("updateData")) {
-                EmployeeShowToDTO employeeShowToDTO = objectMapper.convertValue(response.get("updateData"), EmployeeShowToDTO.class);
-                employeeService.updateEmployee(employeeShowToDTO);
+                EmployeeDataDTO employeeUpdateData = objectMapper.convertValue(response.get("updateData"), EmployeeDataDTO.class);
+                employeeService.updateEmployee(employeeUpdateData);
                 kafkaProducerHelper.sagaSendSuccessResponse(requestId,"logistics-service-group");
             } else if (response.containsKey("error")) {
                 kafkaProducerHelper.sagaSendErrorResponse(requestId,"logistics-service-group",response.get("error").toString());
@@ -60,9 +59,9 @@ public class EmployeeListener {
             TenantContext.setCurrentTenant(response.get("tenant").toString());
 
             if (response.containsKey("originData")) {
-                EmployeeShowToDTO employeeShowToDTO = objectMapper.convertValue(response.get("originData"), EmployeeShowToDTO.class);
-                System.out.println(employeeShowToDTO.getLastName().concat(employeeShowToDTO.getFirstName()) + " 사원 보상트랜잭션 실행");
-                employeeService.updateEmployee(employeeShowToDTO);
+                EmployeeDataDTO employeeDataDTO = objectMapper.convertValue(response.get("originData"), EmployeeDataDTO.class);
+                System.out.println(employeeDataDTO.getLastName().concat(employeeDataDTO.getFirstName()) + " 사원 보상트랜잭션 실행");
+                employeeService.updateEmployee(employeeDataDTO);
                 System.out.println("보상 트랜잭션 완료");
 //                kafkaProducerHelper.sagaSendSuccessResponse(requestId,"common-service-group");
             } else if (response.containsKey("error")) {

@@ -2,22 +2,17 @@ package com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service;
 
 import com.megazone.ERPSystem_phase3_LogisticsProduction.common.config.KafkaProducerHelper;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.common.config.multi_tenant.TenantContext;
-import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.vat_type.dto.VatTypeShowDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.Employee;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.dto.EmployeeDataDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.dto.EmployeeShowToDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.repository.basic_information_management.Department.DepartmentRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.repository.basic_information_management.Employee.EmployeeRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.dto.EmployeeAttendanceDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.dto.EmployeeOneDTO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Bean;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClient;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -102,15 +97,15 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public void updateEmployee(EmployeeShowToDTO employeeDto) {
-        Employee employee = employeeRepository.findById(employeeDto.getId()).orElseThrow(
+    public void updateEmployee(EmployeeDataDTO employeeDto) {
+        Employee employee = employeeRepository.findById(employeeDto.getEmployeeId()).orElseThrow(
                 () -> new RuntimeException("해당하는 사원정보가 없습니다."));
 
         employee.setDepartment(
                 departmentRepository.findById(employeeDto.getDepartmentId()).orElseThrow(
                         () -> new RuntimeException("해당하는 부서가 없습니다.")));
 
-        employee.setEmployeeNumber(employeeDto.getEmployeeNumber());
+        employee.setEmployeeNumber(employeeDto.getRegistrationNumber());
         employee.setEmail(employeeDto.getEmail());
         employee.setFirstName(employeeDto.getFirstName());
         employee.setLastName(employeeDto.getLastName());

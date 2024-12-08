@@ -81,7 +81,7 @@ spring:
   kafka:
 #    bootstrap-servers: kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092
 #    bootstrap-servers: localhost:9092
-    bootstrap-servers: 13.124.39.151:9092
+    bootstrap-servers: 3.38.166.76:9092
 #    bootstrap-servers: 218.235.89.82:9092
     properties:
       security.protocol: PLAINTEXT

@@ -1,5 +1,6 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service;
 
+import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.dto.EmployeeDataDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.dto.EmployeeShowToDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.dto.EmployeeAttendanceDTO;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.service.dto.EmployeeOneDTO;
@@ -13,7 +14,7 @@ public interface EmployeeService {
 
     List<EmployeeAttendanceDTO> getEmployeeAttendances(Long employeeId);
 
-    void updateEmployee(EmployeeShowToDTO employeeDto);
+    void updateEmployee(EmployeeDataDTO employeeDto);
 
     void saveEmployee(EmployeeShowToDTO employeeShowToDTO);
 }
