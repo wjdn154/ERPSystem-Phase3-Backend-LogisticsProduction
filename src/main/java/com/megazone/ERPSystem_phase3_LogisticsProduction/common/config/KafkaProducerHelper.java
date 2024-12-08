@@ -21,7 +21,7 @@ public class KafkaProducerHelper {
     }
 
     public void sagaSendSuccessResponse(String requestId, String groupId) {
-        kafkaTemplate.send("saga-responses", Map.of(
+        kafkaTemplate.send("saga-response", Map.of(
                 "requestId", requestId,
                 "serviceGroup", groupId,
                 "status", "SUCCESS"
@@ -29,7 +29,7 @@ public class KafkaProducerHelper {
     }
 
     public void sagaSendErrorResponse(String requestId, String groupId, String error) {
-        kafkaTemplate.send("saga-responses", Map.of(
+        kafkaTemplate.send("saga-response", Map.of(
                 "requestId", requestId,
                 "serviceGroup", groupId,
                 "status", "FAILED",

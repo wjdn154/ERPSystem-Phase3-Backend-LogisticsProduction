@@ -36,8 +36,8 @@ public class EmployeeListener {
         try {
             TenantContext.setCurrentTenant(response.get("tenant").toString());
 
-            if (response.containsKey("data")) {
-                EmployeeShowToDTO employeeShowToDTO = objectMapper.convertValue(response.get("data"), EmployeeShowToDTO.class);
+            if (response.containsKey("updateData")) {
+                EmployeeShowToDTO employeeShowToDTO = objectMapper.convertValue(response.get("updateData"), EmployeeShowToDTO.class);
                 employeeService.updateEmployee(employeeShowToDTO);
                 kafkaProducerHelper.sagaSendSuccessResponse(requestId,"logistics-service-group");
             } else if (response.containsKey("error")) {
@@ -47,6 +47,31 @@ public class EmployeeListener {
             kafkaProducerHelper.sagaSendErrorResponse(requestId,"logistics-service-group",e.getMessage());
         }
         finally {
+            TenantContext.setCurrentTenant("PUBLIC");
+        }
+    }
+
+
+    @KafkaListener(topics = "employee-update-compensation", groupId = "logistics-service-group")
+    public void handleEmployeeUpdateCompensation(Map<String, Object> response) {
+        String requestId = (String) response.get("requestId");
+
+        try {
+            TenantContext.setCurrentTenant(response.get("tenant").toString());
+
+            if (response.containsKey("originData")) {
+                EmployeeShowToDTO employeeShowToDTO = objectMapper.convertValue(response.get("originData"), EmployeeShowToDTO.class);
+                System.out.println(employeeShowToDTO.getLastName().concat(employeeShowToDTO.getFirstName()) + " 사원 보상트랜잭션 실행");
+                employeeService.updateEmployee(employeeShowToDTO);
+                System.out.println("보상 트랜잭션 완료");
+//                kafkaProducerHelper.sagaSendSuccessResponse(requestId,"common-service-group");
+            } else if (response.containsKey("error")) {
+//                kafkaProducerHelper.sagaSendErrorResponse(requestId,"logistics-service-group",response.get("error").toString());
+            }
+        } catch (Exception e) {
+//            kafkaProducerHelper.sagaSendErrorResponse(requestId,"logistics-service-group",e.getMessage());
+            e.printStackTrace();
+        } finally {
             TenantContext.setCurrentTenant("PUBLIC");
         }
     }
