@@ -8,6 +8,8 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notifi
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.common.config.redis.RedisCachePut;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.common.config.redis.RedisCacheable;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.client.ClientRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.model.basic_information_management.employee.Employee;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.hr.repository.basic_information_management.Employee.EmployeeRepository;
@@ -26,6 +28,7 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.pu
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.sales_management.sale_plan.SalePlanRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,12 +54,14 @@ SalePlanServiceImpl implements SalePlanService {
     private final ProductRepository productRepository;
     private final IntegratedService integratedService;
     private final NotificationService notificationService;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 판매 계획 목록 조회
      *
      * @return
      */
+    @RedisCacheable(cacheName = "salePlansAll")
     @Override
     @Transactional(readOnly = true)
     public List<SalePlanResponseDto> findAllSalePlans(SearchDTO dto) {
@@ -209,6 +214,8 @@ SalePlanServiceImpl implements SalePlanService {
             return null;
         }
     }
+
+
 
     /** 판매 계획 등록 관련 메서드 **/
     // 판매 계획 등록 DTO -> Entity 변환 메소드

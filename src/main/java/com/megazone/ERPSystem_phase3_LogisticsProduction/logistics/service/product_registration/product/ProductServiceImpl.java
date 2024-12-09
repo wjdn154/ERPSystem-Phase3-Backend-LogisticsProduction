@@ -1,5 +1,6 @@
 package com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.service.product_registration.product;
 
+import com.megazone.ERPSystem_phase3_LogisticsProduction.common.config.redis.RedisCacheable;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.model.basic_information_management.client.Client;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.financial.repository.basic_information_management.client.ClientRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.model.product_registration.Product;
@@ -12,6 +13,7 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.repository.basic_data.process_routing.PrcessRouting.ProcessRoutingRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,11 +44,10 @@ public class ProductServiceImpl implements ProductService{
     /**
      * 품목등록 리스트 조회
      * @return 등록된 모든 품목을 반환
-     * 리펙토링 해야함
      */
+    @RedisCacheable(cacheName = "products")
     @Override
     public List<ProductResponseDto> findAllProducts() {
-
         return productRepository.findAll().stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());

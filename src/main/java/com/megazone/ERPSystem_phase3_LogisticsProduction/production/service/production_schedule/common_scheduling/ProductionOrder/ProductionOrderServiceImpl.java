@@ -9,6 +9,7 @@ import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notifi
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.model.notification.enums.PermissionType;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.IntegratedService;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.Integrated.service.NotificationService;
+import com.megazone.ERPSystem_phase3_LogisticsProduction.common.config.redis.RedisCacheable;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.logistics.repository.product_registration.product.ProductRepository;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.bom.StandardBom;
 import com.megazone.ERPSystem_phase3_LogisticsProduction.production.model.basic_data.process_routing.ProcessDetails;
@@ -106,6 +107,7 @@ public class ProductionOrderServiceImpl implements ProductionOrderService {
     /**
      * 모든 작업 지시 조회
      */
+    @RedisCacheable(cacheName = "productionOrdersAll")
     @Override
     @Transactional(readOnly = true)
     public List<ProductionOrderDTO> getAllProductionOrders() {

@@ -89,6 +89,11 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-test") // Spring Boot 테스트 스타터
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher") // JUnit 플랫폼 런처
 
+	// Redis 의존성 추가
+	implementation("org.springframework.boot:spring-boot-starter-data-redis")
+	//ReadFrom
+	implementation("io.lettuce:lettuce-core:6.5.1.RELEASE")
+
 	// MySQL JDBC 드라이버
 	runtimeOnly("mysql:mysql-connector-java:8.0.30") // MySQL 드라이버
 	implementation("org.springframework.kafka:spring-kafka") // Kafka

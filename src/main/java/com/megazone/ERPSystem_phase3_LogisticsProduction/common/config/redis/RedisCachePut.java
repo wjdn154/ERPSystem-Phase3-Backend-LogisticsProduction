@@ -6,7 +6,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
-public @interface RedisCacheable {
+public @interface RedisCachePut {
     String cacheName();
-    long expireTime() default -1;
+    String key() default "";
 }
