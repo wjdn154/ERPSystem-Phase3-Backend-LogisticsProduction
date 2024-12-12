@@ -58,10 +58,9 @@ SalePlanServiceImpl implements SalePlanService {
 
     /**
      * 판매 계획 목록 조회
-     *
      * @return
      */
-    @RedisCacheable(cacheName = "salePlansAll")
+    @RedisCacheable(cacheName = "salePlansAll", expireTime = 3600)
     @Override
     @Transactional(readOnly = true)
     public List<SalePlanResponseDto> findAllSalePlans(SearchDTO dto) {
